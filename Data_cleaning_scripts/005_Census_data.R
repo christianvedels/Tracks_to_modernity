@@ -1,7 +1,7 @@
 # Census data
 #
-# Date updated:   2023-10-02
-# Auhtor:         Christian Vedel 
+# Date updated:   2025-01-14
+# Auhtor:         Christian Vedel, Tom Görges
 # Purpose:        Cleans census data
 
 # ==== Libraries ====
@@ -67,14 +67,18 @@ hisco = hisco_full %>%
     hisco5 = as.numeric(hisco5),
   )
 
-# Calculate ses for each HISCO code
+
+
+# Calculate HISCAM for each HISCO code
 hisco = hisco %>% mutate(
-  ses1 = hisco_to_ses(hisco1),
-  ses2 = hisco_to_ses(hisco2),
-  ses3 = hisco_to_ses(hisco3),
-  ses4 = hisco_to_ses(hisco4),
-  ses5 = hisco_to_ses(hisco5)
+  hiscam1 = hisco_to_ses(hisco1, ses = "hiscam_u1"),
+  hiscam2 = hisco_to_ses(hisco2, ses = "hiscam_u1"),
+  hiscam3 = hisco_to_ses(hisco3, ses = "hiscam_u1"),
+  hiscam4 = hisco_to_ses(hisco4, ses = "hiscam_u1"),
+  hiscam5 = hisco_to_ses(hisco5, ses = "hiscam_u1")
 )
+
+
 
 # Aggregate at the parish level
 mean0 = function(x){
@@ -86,11 +90,11 @@ hisco = hisco %>%
   # sample_n(10000) %>% 
   rowwise() %>% 
   mutate(
-    ses_avg = mean0(c(ses1, ses2, ses3, ses4, ses5))
+    hiscam_avg = mean0(c(hiscam1, hiscam2, hiscam3, hiscam4, hiscam5))
   ) %>% 
   group_by(Year, GIS_ID) %>% 
   summarise(
-    hisclass_avg = mean0(ses_avg)
+    hiscam_avg = mean0(hiscam_avg)
   )
 
 # ==== Join on ses scores ====
