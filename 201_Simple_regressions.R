@@ -39,7 +39,7 @@ mod3 = feols(
 )
 
 mod4 = feols(
-  log(hisclass_avg) ~ Connected_rail | GIS_ID + Year,
+  log(hiscam_avg) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
