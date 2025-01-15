@@ -47,10 +47,18 @@ mod5 = feols(
   cluster = ~ GIS_ID
 )
 
-etable(mod1, mod2, mod3, mod4, mod5) %>% 
-  knitr::kable()
+# Generate output table
+etable(mod1, mod2, mod3, mod4, mod5,
+       fitstat = ~ ar2 + n,  # Include R-squared and number of observations
+       cluster = "GIS_ID", # Display the clustering
+       signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1)) # Custom significance codes
 
-etable(mod1, mod2, mod3, mod4, mod5)
+# Generate output table (tex)
+etable(mod1, mod2, mod3, mod4, mod5,
+       fitstat = ~ ar2 + n,  # Include R-squared and number of observations
+       cluster = "GIS_ID", # Display the clustering
+       signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1),
+       tex = T) # Custom significance codes
 
 ############################################################
 ### === Callaway and St Anna: Demographics / Economy === ###
