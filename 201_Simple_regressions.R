@@ -1,8 +1,8 @@
 # Simple regressions
 #
-# Date updated:   2023-10-02
-# Auhtor:         Christian Vedel 
-# Purpose:        Runs a few simple regressions
+# Date updated:   2025-01-21
+# Author:         Christian Vedel, Tom Görges
+# Purpose:        Runs regressions
 
 # ==== Libraries ====
 library(tidyverse)
@@ -10,89 +10,91 @@ library(fixest)
 library(did)
 source("Data_cleaning_scripts/000_Functions.R")
 
+# clear workspace
+rm(list = ls())
+
+
 # ==== Load data ====
 grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv")
 
 
-
 # ==== TWFE regressions (Demographics / Economy) ====
-mod1 = feols(
+twfe1 = feols(
   log(Pop) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
 
-mod2 = feols(
+twfe2 = feols(
   log(Child_women_ratio) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
 
-mod3 = feols(
+twfe3 = feols(
   log(Manufacturing_789) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
 
-mod4 = feols(
+twfe4 = feols(
   log(hiscam_avg) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
 
-mod5 = feols(
+twfe5 = feols(
   log(Born_different_county) ~ Connected_rail | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
 
 # Generate output table
-etable(mod1, mod2, mod3, mod4, mod5,
+etable(twfe1, twfe2, twfe3, twfe4, twfe5,
        fitstat = ~ ar2 + n,  # Include R-squared and number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1)) # Custom significance codes
 
-# Generate output table (tex)
-etable(mod1, mod2, mod3, mod4, mod5,
-       fitstat = ~ ar2 + n,  # Include R-squared and number of observations
-       cluster = "GIS_ID", # Display the clustering
-       signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1),
-       tex = T) # Custom significance codes
+
 
 ############################################################
 ### === Callaway and St Anna: Demographics / Economy === ###
 ############################################################
 
 # Why duplicates?
-duplicated_rows <- census0 %>% filter(duplicated(.))
-nrow(duplicated_rows) # Number of duplicate rows
+#duplicated_rows <- census0 %>% filter(duplicated(.))
+#nrow(duplicated_rows)
 
-duplicated_rows <- census0 %>% filter(duplicated(.))
-print(duplicated_rows)
+#duplicated_rows <- census0 %>% filter(duplicated(.))
+#print(duplicated_rows)
 
 ######################################################################################
 # ==== Need treat_year variable (rail opened) for each GIS_ID for staggered DiD: === #
 ######################################################################################
 
-rail <- read.csv2("./Data/Panel_of_railways_in_parishes.csv")
+# change treat year to first occurence in observed year
 
-treat_year <- rail %>%
-  group_by(GIS_ID) %>% 
-  summarise(Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0))
+# actually treated in 1878 but treat as treated in 1880 because this is where we observe it
 
-
-census <- left_join(census, treat_year, by = "GIS_ID")
 ##############################
 
-
-census0 <- census %>%
+# some preparation before implementation of staggered DiD
+census0 <- census %>% 
   mutate(
     Year_num = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
-  ) %>%
+  ) %>% 
+  group_by(GIS_ID) %>% 
   mutate(
-    # Transform other variables for further analysis
+    # Identify the first year when Connected_rail is 1
+    Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0)
+  ) %>% 
+  mutate(
+    # Ensure Treat_year is consistent across groups
+    Treat_year = ifelse(Treat_year > 0, Treat_year, 0)
+  ) %>% 
+  mutate(
     lPop = log(Pop),
     lManu = log(Manufacturing_789 + 1),
     lAgri = log(hisco_major6 + 1),
@@ -101,13 +103,17 @@ census0 <- census %>%
     lBorn_different_county = log(Born_different_county + 1)
   )
 
+
+###########################################################################################
+
+
 # log(Pop)
 cs_mod1 <- att_gt(
   yname = "lPop",          # Outcome variable
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = ~1,               # No covariates 
   data = census0,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -150,7 +156,7 @@ cs_mod5 <- att_gt(
   yname = "lBorn_different_county",          # Outcome variable
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
-  gname = "Treat_year",       # First year of treatment
+  gname = "Treat_year",       # First (observed) year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
   data = census0,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
@@ -172,39 +178,38 @@ summary(agg_mod5)
 
 
 
+
 ###################################################################################################
+# Make nice output table
 
-# Pop
-agg.es1 <- aggte(cs_mod1, type = "group") # "The Overall ATT averages the group-specific treatment effects 
-                                          #  across groups. In our view, this parameter is a leading choice as an overall
-                                          #  summary effect of participating in the treatment. It is the average effect of
-                                          #  participating in the treatment that was experienced across all units that 
-                                          #  participate in the treatment in any period. In this sense, it has a similar 
-                                          #  interpretation to the ATT in the textbook case where there are exactly two periods
-                                          #  and two groups."
+# Extract results
+results <- data.frame(
+  Model = c("TWFE_1", "TWFE_2", "TWFE_3", "TWFE_4", "TWFE_5", 
+            "CS_1", "CS_2", "CS_3", "CS_4", "CS_5"),
+  Outcome = c(as.character(formula(twfe1)[2]), as.character(formula(twfe2)[2]), as.character(formula(twfe3)[2]), as.character(formula(twfe4)[2]), as.character(formula(twfe5)[2]),
+    agg_mod1$DIDparams$yname, agg_mod2$DIDparams$yname, agg_mod3$DIDparams$yname, agg_mod4$DIDparams$yname, agg_mod5$DIDparams$yname),
+  coefficient = c(twfe1$coefficients, twfe2$coefficients, twfe3$coefficients, twfe4$coefficients, twfe5$coefficients,
+                  agg_mod1$overall.att, agg_mod2$overall.att, agg_mod3$overall.att, agg_mod4$overall.att, agg_mod5$overall.att
+                  ),
+  se = c(twfe1$se, twfe2$se, twfe3$se, twfe4$se, twfe5$se, 
+         agg_mod1$overall.se, agg_mod2$overall.se, agg_mod3$overall.se, agg_mod4$overall.se, agg_mod5$overall.se
+         )
+)
 
-summary(agg.es1)
-ggdid(agg.es1)
+# Calculate the t-statistic after creating the data frame
+results$t <- results$coefficient / results$se
 
-# child-woman ratio
-agg.es2 <- aggte(cs_mod2, type = "group")
-summary(agg.es2)
-ggdid(agg.es2)
+results$p <- pnorm(abs(results$t), lower.tail = FALSE)*2
 
-# Manufacturing
-agg.es3 <- aggte(cs_mod3, type = "group")
-summary(agg.es3)
-ggdid(agg.es3)
+results$significance <- ifelse(
+  results$p < 0.01, "***",
+  ifelse(results$p < 0.05, "**",
+         ifelse(results$p < 0.1, "*", "")
+  )
+)
 
-# HISCAM
-agg.es4 <- aggte(cs_mod4, type = "group")
-summary(agg.es4)
-ggdid(agg.es4)
 
-# Migration
-agg.es5 <- aggte(cs_mod5, type = "group")
-summary(agg.es5)
-ggdid(agg.es5)
+
 ###################################################################################################
 
 
