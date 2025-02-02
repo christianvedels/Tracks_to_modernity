@@ -20,48 +20,60 @@ library(tidygeocoder)
 library(leastcostpath)
 library(terra)
 
+
 # ==== Parameters ====
 # Define the range of crit_slope values
 crit_slope_values = c(1:16)
 
 # ==== Load data (Railway shape data and Outline of Denmark) ====
-shape_data = st_read("../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>% st_transform(4326)
-outline_dk = st_read("../Data not redistributable/Outline DK/DNK_adm0.shp") %>% st_transform(4326)
+shape_data = st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>% st_transform(4326)
+outline_dk = st_read("../../Data not redistributable/Outline DK/DNK_adm0.shp") %>% st_transform(4326)
 
 # Reading in market towns
-market_towns = read_delim("Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE)
+market_towns = read_delim("../Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE, locale =locale(encoding = "ISO-8859-1"))
+
+# -----------
+# Clean Coord column in market towns
+
+# Define a helper function
+dms_to_dd <- function(dms) {
+  # This pattern expects strings of the form "dd°mm?ss?D" or "dd°mm?D"
+  pattern <- "([0-9]+)°([0-9]+)\\?(?:([0-9]+)\\?)?([NSEWØ])"
+  parts <- str_match(dms, pattern)
+  # Extract the components: group 1 = degrees, group 2 = minutes, group 3 = seconds (optional),
+  # and group 4 = direction.
+  deg <- as.numeric(parts[2])
+  min <- as.numeric(parts[3])
+  sec <- as.numeric(parts[4])
+  if (is.na(sec)) sec <- 0
+  # Convert to decimal degrees
+  dd <- deg + min / 60 + sec / 3600
+  # Adjust sign if the direction is South or West
+  if (parts[5] %in% c("S", "W")) {
+    dd <- -dd
+  }
+  return(dd)
+}
+
+# Clean the dataset:
+market_towns <- market_towns %>%
+  # Split Coord into two parts: lat_str and long_str
+  separate(Coord, into = c("lat_str", "long_str"), sep = " ", remove = FALSE) %>%
+  # Convert the DMS strings to decimal degrees for both latitude and longitude
+  mutate(
+    lat  = sapply(lat_str, dms_to_dd),
+    long = sapply(long_str, dms_to_dd)
+  )
+
+# -------------
 
 # Obtain elevation raster (from OpenStreetMap)
-denmark_elev = get_elev_raster(outline_dk, z = 9, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
+denmark_elev = get_elev_raster(outline_dk, z = 6, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
 # ==== Plot elev ====
 plot(denmark_elev)
 dnk = as(denmark_elev, "SpatRaster")
 plot(dnk, main="Original Raster")
-
-###################
-# === % Slope === # Dont need the following part just playing around and sanity checks
-###################
-
-# # Calculate slope in radians - percentage %
-# dnk_slope <- terrain(dnk, "slope", unit = "radians")
-
-# plot(dnk_slope)
-# max(dnk_slope$slope)
-
-
-# # Apply the tangent function and convert to percentage
-# dnk_slope_perc <- app(dnk_slope, function(x) tan(x) * 100)
-
-# plot(dnk_slope_perc, main="Slope Raster")
-# max(dnk_slope_perc$lyr.1)
-
-
-# # Store Median and Mean slope values
-# slopeValues <- values(dnk_slope_perc, na.rm = T)
-# summary(slopeValues)
-# mean_slope <- mean(slopeValues)
-# median_slope <- median(slopeValues)
 
 #############################################################################################
 # === Create slope cost surface using pre-installed wheeled transport function (Herzog) === #
@@ -89,7 +101,7 @@ for (crit_slope in crit_slope_values) {
   
   # Construct the file path dynamically based on the crit_slope value
   file_path = paste0(
-    "../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
+    "../../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
     slope_label,
     ".rds"
   )
@@ -97,27 +109,6 @@ for (crit_slope in crit_slope_values) {
   # Save the 'slope_cs' object to a .rds file with the current crit_slope in the filename
   write_rds(slope_cs, file_path)
 }
-
-
-
-############################
-# === Some more checks === #
-############################
-
-
-# Customize own cost function as sanity check ---------------------------------------
-# crit_slope <- median_slope
-
-# slope_cs2 <- create_slope_cs(
-# dnk,
-# cost_function = function(x) {1 / (1 + ((x*100)/crit_slope)^2)},
-# neighbours = 8,
-# max_slope = NULL,
-# exaggeration = FALSE
-# )
-
-# plot(slope_cs2)
-
 
 # ---------------------------------------------------------------------------------------
 # ==== Load slope cost surfaces ==== #
@@ -127,7 +118,7 @@ for (i in crit_slope_values) {
   
   # Construct the file path for each crit_slope value
   file_path = paste0(
-    "../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
+    "../../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
     i,
     ".rds"
   )
@@ -141,135 +132,93 @@ for (i in crit_slope_values) {
 
 # === Nodes / Market towns ====
 # Calculate the median of the Pop1801 column
-median_pop1801 = median(market_towns$Pop1801, na.rm = TRUE)
+median_pop1801 <- median(market_towns$Pop1801, na.rm = TRUE)
+Q3_pop1801 <- quantile(market_towns$Pop1801, probs = 0.75, na.rm = TRUE)
 
 # Subset the data frame, sort and select
-subset_market_towns = market_towns %>% 
+subset_market_towns <- market_towns %>% 
   filter(
-    Pop1801 > median_pop1801
+    Pop1801 > Q3_pop1801
   ) %>% 
-  dplyr::select(Market_town, Pop1801 )%>% 
+  dplyr::select(Market_town, Pop1801, lat, long)%>% 
   mutate(
-    node_type = "Above median 1801"
+    node_type = "75th percentile"
   )
 
-### Add nodes
-additional_nodes = list( # TODO: Get rid of most of these
+# Take out nodes affected by German-Danish war
+subset_market_towns <- subset_market_towns %>% 
+  filter(!Market_town %in% c("Aabenraa", "Ribe", "Haderslev", "Toender", "Soenderborg"))
+
+# "3 years in advance it had been decided to build a railway to Strandby (Esbjerg) (lit. 167, p. 11), and
+# by the Railway Act of 1868 and 1870, it was decided that a West Jutland railway should also be built from
+# Esbjerg via Varde and Ringkøbing to Holstebro, where it was connected to the already existing railway network. (Aageesen, p. 58)
+
+### Add additional nodes
+additional_nodes = list(
   esbjerg = data.frame(Market_town = "Esbjerg", Pop1801 = NA),
-  struer = data.frame(Market_town = "Struer", Pop1801 = NA),
-  skive = data.frame(Market_town = "Skive", Pop1801 = NA),
   ringkobing = data.frame(Market_town = "Ringkobing", Pop1801 = NA),
-  middelfart = data.frame(Market_town = "Middelfart", Pop1801 = NA),
-  frederikshavn = data.frame(Market_town = "Frederikshavn", Pop1801 = NA),
-  vordingborg = data.frame(Market_town = "Masnedsund", Pop1801 = NA),
-  norresundby = data.frame(Market_town = "Norresundby", Pop1801 = NA),
-  padborg = data.frame(Market_town = "Padborg", Pop1801 = NA),
-  vojens = data.frame(Market_town = "Vojens", Pop1801 = NA),
   holstebro = data.frame(Market_town = "Holstebro", Pop1801 = NA),
-  tinglev = data.frame(Market_town = "Tinglev", Pop1801 = NA),
-  rodekro = data.frame(Market_town = "Rodekro", Pop1801 = NA),
-  skanderborg = data.frame(Market_town = "Skanderborg", Pop1801 = NA),
-  silkeborg = data.frame(Market_town = "Silkeborg", Pop1801 = NA),
-  maribo = data.frame(Market_town = "Maribo", Pop1801 = NA),
-  bandholm = data.frame(Market_town = "Bandholm", Pop1801 = NA),
-  orehoved = data.frame(Market_town = "Orehoved", Pop1801 = NA),
-  varde = data.frame(Market_town = "Varde", Pop1801 = NA),
-  rodbyhavn = data.frame(Market_town = "Rodbyhavn", Pop1801 = NA),
-  grenaa = data.frame(Market_town = "Grenaa", Pop1801 = NA),
-  herning = data.frame(Market_town = "Herning", Pop1801 = NA),
-  oster_toreby = data.frame(Market_town = "Oster Toreby", Pop1801 = NA)
-) %>% do.call("rbind", .) %>% 
+  korsoer = data.frame(Market_town = "Korsør", Pop1801 = NA),
+  middelfart = data.frame(Market_town = "Middelfart", Pop1801 = NA),
+  varde = data.frame(Market_town = "Varde", Pop1801 = NA)) %>%
+  do.call("rbind", .)
+
+
+
+
+# Geocode (Open Street Map)
+additional_nodes <- additional_nodes %>% 
+  geocode(
+    Market_town, 
+    method = 'osm', 
+    full_results = F, 
+    custom_query = list(countrycodes = 'dk')) 
+ 
+# Add node type
+additional_nodes <- additional_nodes %>%
   mutate(
     node_type = "Additional nodes"
   )
 
-
-subset_market_towns = subset_market_towns %>% bind_rows(additional_nodes)
-
-
-### Get coordinates
-
-### Change names for OpenStreetMap
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Koebenhavn"] = "Copenhagen"
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Soenderborg"] = "Sonderborg" 
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Aeroeskoebing"] = "Ærøskøbing"
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Neksoe"] = "Nexø"
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Rudkoebing"] = "Rudkøbing"
-subset_market_towns$Market_town[subset_market_towns$Market_town == "Roenne"] = "Rønne"
-
-# Geocode (Open Street Map)
-subset_market_towns_geo = subset_market_towns %>% 
-  geocode( # TODO: Coordinates can be found in 
-    Market_town, 
-    method = 'osm', 
-    full_results = TRUE, 
-    custom_query = list(countrycodes = 'dk')
-  ) %>%
-  dplyr::select(all_of(colnames(subset_market_towns)), lat, long, display_name)
-
-# correct coordinates
-subset_market_towns_geo$lat[subset_market_towns_geo$Market_town == "Toender"] = 54.93333684818414
-subset_market_towns_geo$long[subset_market_towns_geo$Market_town == "Toender"] = 8.860980954906205
+# bind together
+subset_market_towns <- subset_market_towns %>% bind_rows(additional_nodes)
 
 # keep df
-subset_market_towns_df = subset_market_towns_geo
+nodes_df <- subset_market_towns
 
-# Convert the data frame to an sf object
-subset_market_towns_sf = st_as_sf(subset_market_towns_geo, coords = c("long", "lat"), crs = 4326)
+# create sf
+nodes_sf <- st_as_sf(subset_market_towns,
+                         coords = c("long", "lat"),
+                         crs = 4326)
 
-### roughly check
-plot(outline_dk$geometry)
-plot(subset_market_towns_sf$geometry, add = T, col = "blue")
 
+plot(dnk, main="Original Raster")
+plot(nodes_sf$geometry, add = T, col = "yellow")
+
+# ----------------------------------
 
 ### Make data frame a Spatial points df
-coordinates(subset_market_towns_geo) = ~long+lat
-proj4string(subset_market_towns_geo) = CRS("+proj=longlat +datum=WGS84")
-
-
+coordinates(nodes_df) = ~long+lat
+proj4string(nodes_df) = CRS("+proj=longlat +datum=WGS84")
 
 # Define market town pairs (routes) node to node
-town_pairs = matrix(c("Copenhagen", "Roskilde",
-                       "Roskilde", "Korsoer",
+town_pairs = matrix(c("Koebenhavn", "Roskilde",
+                       "Roskilde", "Korsør",
                        "Aarhus", "Randers",
                        "Aarhus", "Viborg",
-                       "Copenhagen", "Helsingoer",
-                       "Padborg", "Vojens",
+                       "Koebenhavn", "Helsingoer",
                        "Nyborg", "Odense", 
                        "Odense", "Middelfart",
-                       "Viborg", "Skive",
-                       "Struer", "Skive",
-                       "Vojens", "Haderslev",
-                       "Vojens", "Kolding",
-                       "Fredericia", "Kolding",
-                       "Struer", "Holstebro",
-                       "Toender", "Tinglev",
-                       "Aabenraa", "Rodekro",
-                       "Vejle", "Fredericia",
-                       "Horsens", "Vejle",
-                       "Horsens", "Skanderborg",
-                       "Skanderborg", "Aarhus",
-                       "Randers", "Aalborg",
-                       "Maribo", "Bandholm", # oldest private line
-                       "Roskilde", "Koege", 
-                       "Koege", "Naestved", 
-                       "Naestved", "Masnedsund",
-                       "Norresundby", "Frederikshavn",
-                       "Skanderborg", "Silkeborg",
-                       "Orehoved", "Nykoebing Falster",
-                       "Roskilde", "Holbaek", 
-                       "Holbaek", "Kalundborg",
-                       "Esbjerg", "Kolding",
+                       "Holstebro", "Viborg",
+                       "Fredericia", "Horsens",
+                       "Horsens", "Aarhus",
+                       "Aalborg", "Randers",
+                       "Naestved", "Roskilde",
+                       "Esbjerg", "Fredericia",
                        "Esbjerg", "Varde",
-                       "Oster Toreby", "Nakskov",
-                       "Maribo", "Rodbyhavn",
                        "Varde", "Ringkobing",
                        "Ringkobing", "Holstebro",
-                       "Ribe", "Esbjerg",
-                       "Randers", "Grenaa",
-                       "Odense", "Svendborg",
-                       "Grenaa", "Aarhus",
-                       "Silkeborg", "Herning"),
+                       "Svendborg", "Odense"),
                      ncol = 2, byrow = TRUE) %>% 
   data.frame() %>% 
   mutate(
@@ -289,9 +238,9 @@ calculate_lcp = function(cost_surface, town1_coords, town2_coords) {
 lcp_sf_all_cost_surfaces = list()
 
 # Check if the dataset is an sf object and extract coordinates accordingly
-if (inherits(subset_market_towns_sf, "sf")) {
-  coords = st_coordinates(subset_market_towns_sf)
-  subset_market_towns_geo = cbind(subset_market_towns_sf, coords)
+if (inherits(nodes_sf, "sf")) {
+  coords = st_coordinates(nodes_sf)
+  nodes_df = cbind(nodes_sf, coords)
 }
 
 # Create a list of all cost surfaces
@@ -316,8 +265,8 @@ for (slope_label in names(cost_surfaces)) {
     town2_name = town_pairs[i, 2]
 
     # Get the coordinates of each town from the market towns dataset
-    town1_coords = subset_market_towns_geo[subset_market_towns_geo$Market_town == town1_name, c("X", "Y")]
-    town2_coords = subset_market_towns_geo[subset_market_towns_geo$Market_town == town2_name, c("X", "Y")]
+    town1_coords = nodes_df[nodes_df$Market_town == town1_name, c("X", "Y")]
+    town2_coords = nodes_df[nodes_df$Market_town == town2_name, c("X", "Y")]
 
     # Ensure there are valid coordinates
     if (nrow(town1_coords) > 0 & nrow(town2_coords) > 0) {
@@ -347,7 +296,7 @@ for (slope_label in names(cost_surfaces)) {
   all_lcps_sf = do.call("bind_rows", lcp_sf_list)
   
   # Add the "opened" column
-  opened = read_csv("Data/Opened_pairs.csv") %>% dplyr::select(town_pair_id, opened)
+  opened = read_csv("../Data/Opened_pairs.csv") %>% dplyr::select(town_pair_id, opened)
   # Test of 'opened' has expected dims
   test1 = !all(sort(all_lcps_sf$town_pair_id) == sort(opened$town_pair_id))
   test2 = !(NROW(opened) == NROW(all_lcps_sf))
@@ -368,16 +317,16 @@ for (slope_label in names(cost_surfaces)) {
   plot(st_geometry(all_lcps_sf), add = TRUE, col = "blue", lwd = 2)
 }
 
-# Optional: Save the LCPs for each cost surface with town_pair in shapefile
+# Save LCPs for each cost surface with town_pair in shapefile
 for (slope_label in names(lcp_sf_all_cost_surfaces)) {
   st_write(lcp_sf_all_cost_surfaces[[slope_label]], 
-           paste0("../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_", slope_label, ".shp"), 
+           paste0("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_", slope_label, ".shp"), 
            driver = "ESRI Shapefile",
            append = F) # replace existing file
 }
 
 
-test = st_read("../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_10.shp")
+test = st_read("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
 plot(test$geometry)
 
 
