@@ -195,15 +195,39 @@ nodes_sf <- st_as_sf(subset_market_towns,
 plot(dnk, main="Original Raster")
 plot(nodes_sf$geometry, add = T, col = "yellow")
 
-# create file that contains all unique GIS_IDs and their respective minimum distance to nodes
+# === Creation of file that contains all unique GIS_IDs and their respective minimum distance to nodes
 
-# load sogne shape
+# Load shape files
+shape_parishes <- read_sf("../../Data not redistributable/DK parish shapefile/Parish1820Counting1837.shp")
 
-# find centroids of all GIS_Ids
+# Ensure valid geometries
+shape_parishes <- st_make_valid(shape_parishes)
 
-# find minimum distance to node from each centroid
+# Check validity
+shape_parishes$valid <- st_is_valid(shape_parishes, reason = TRUE)
+table(shape_parishes$valid)
 
-# store result as excel file
+# Ensure consistent coordinate systems:
+nodes_sf <- st_transform(nodes_sf, crs = st_crs(shape_parishes))
+
+# Compute centroids of polygons
+shape_parishes_centroids <- st_centroid(shape_parishes)
+
+# compute distance matrix
+dist_matrix <- st_distance(shape_parishes_centroids, nodes_sf)
+
+# extract minimum distance
+shape_parishes_centroids$min_distance_to_node_km <- apply(dist_matrix, 1, min) / 1000
+
+# select needed vars
+distance_to_nodes_df <- shape_parishes_centroids %>% 
+  dplyr::select(GIS_ID, min_distance_to_node_km) %>%
+  st_drop_geometry()
+
+# safe
+library(writexl)
+
+write_xlsx(distance_to_nodes_df, "../Data/distance_to_nodes.xlsx")
 
 # ----------------------------------
 
