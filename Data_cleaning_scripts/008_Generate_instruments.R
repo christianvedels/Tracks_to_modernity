@@ -68,7 +68,7 @@ market_towns <- market_towns %>%
 # -------------
 
 # Obtain elevation raster (from OpenStreetMap)
-denmark_elev = get_elev_raster(outline_dk, z = 6, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
+denmark_elev = get_elev_raster(outline_dk, z = 8, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
 # ==== Plot elev ====
 plot(denmark_elev)
@@ -159,7 +159,7 @@ additional_nodes = list(
   ringkobing = data.frame(Market_town = "Ringkobing", Pop1801 = NA),
   holstebro = data.frame(Market_town = "Holstebro", Pop1801 = NA),
   korsoer = data.frame(Market_town = "Korsør", Pop1801 = NA),
-  middelfart = data.frame(Market_town = "Middelfart", Pop1801 = NA),
+  middelfart = data.frame(Market_town = "Middelfart town", Pop1801 = NA),
   varde = data.frame(Market_town = "Varde", Pop1801 = NA)) %>%
   do.call("rbind", .)
 
@@ -195,6 +195,16 @@ nodes_sf <- st_as_sf(subset_market_towns,
 plot(dnk, main="Original Raster")
 plot(nodes_sf$geometry, add = T, col = "yellow")
 
+# create file that contains all unique GIS_IDs and their respective minimum distance to nodes
+
+# load sogne shape
+
+# find centroids of all GIS_Ids
+
+# find minimum distance to node from each centroid
+
+# store result as excel file
+
 # ----------------------------------
 
 ### Make data frame a Spatial points df
@@ -208,7 +218,7 @@ town_pairs = matrix(c("Koebenhavn", "Roskilde",
                        "Aarhus", "Viborg",
                        "Koebenhavn", "Helsingoer",
                        "Nyborg", "Odense", 
-                       "Odense", "Middelfart",
+                       "Odense", "Middelfart town",
                        "Holstebro", "Viborg",
                        "Fredericia", "Horsens",
                        "Horsens", "Aarhus",

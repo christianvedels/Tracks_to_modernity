@@ -9,7 +9,7 @@ library(tidyverse)
 library(hisco)
 
 # ==== Load data ====
-load("../Data not redistributable/All_raw_data_for_project.Rdata")
+load("../../Data not redistributable/All_raw_data_for_project.Rdata")
 
 # ==== Select variables ====
 clean_census = popdata %>% 

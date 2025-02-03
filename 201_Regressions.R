@@ -15,14 +15,11 @@ source("Data_cleaning_scripts/000_Functions.R")
 # clear workspace
 rm(list = ls())
 
-
-
 # ==== Load and prepare Census data ====
 census <- read_csv2("Data/REGRESSION_DATA_Demography.csv") %>%
   mutate(
     # Rename and create new variables
     Population    = Pop,
-    Share_Manufacturing = Manufacturing_789 / Pop, # share
     HISCAM        = hiscam_avg,
     Migration     = Born_different_county,
     RailAccess    = Connected_rail,
@@ -53,6 +50,13 @@ census <- read_csv2("Data/REGRESSION_DATA_Demography.csv") %>%
     Treat_year_instr = ifelse(Treat_year_instr > 0, Treat_year_instr, 0)
   ) %>%
   ungroup()
+
+# create Share_Manufacturing
+census$Pop_work <- rowSums(census[, grep("^hisco_major[0-9]$", names(census))], na.rm = TRUE)
+
+
+census$Share_Manufacturing <- (census$Manufacturing_789 / census$Pop_work)*1000
+
 
 # === Delete duplicates Census ===
 
