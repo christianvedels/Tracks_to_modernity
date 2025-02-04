@@ -9,20 +9,20 @@ library(tidyverse)
 library(foreach)
 
 # ==== Load data ====
-railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
-railways_StateTrunk = read_csv2("Data/Panels_by_type/type2_StateTrunk.csv")
-railways_StateNonTrunk = read_csv2("Data/Panels_by_type/type2_StateNonTrunk.csv")
-railways_Private = read_csv2("Data/Panels_by_type/type2_Private.csv")
+railways = read_csv2("../Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
+railways_StateTrunk = read_csv2("../Data/Panels_by_type/type2_StateTrunk.csv")
+railways_StateNonTrunk = read_csv2("../Data/Panels_by_type/type2_StateNonTrunk.csv")
+railways_Private = read_csv2("../Data/Panels_by_type/type2_Private.csv")
 
-Assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv", guess_max = 10000)
-Assembly_houses_MA = read_csv2("Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
+Assembly_houses = read_csv2("../Data/Panel_of_assembly_houses.csv", guess_max = 10000)
+Assembly_houses_MA = read_csv2("../Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
 
-Folk_high_schools = read_csv2("Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
-Folk_high_schools_MA = read_csv2("Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools = read_csv2("../Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools_MA = read_csv2("../Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
 
-census = read_csv2("Data/Census_data.csv", guess_max = 10000)  
+census = read_csv2("../Data/Census_data.csv", guess_max = 10000)  
 
-geo = read_csv2("Data/Geo_info.csv", guess_max = 2000)
+geo = read_csv2("../Data/Geo_info.csv", guess_max = 2000)
 
 # ==== Join different raildata ====
 railways_StateTrunk = railways_StateTrunk %>% select(-type2)
@@ -41,7 +41,7 @@ railways = railways %>%
   )
 
 # ==== Load instrument ====
-instrument = read_csv2("Data/Instruments/paramS_median.csv")
+instrument = read_csv2("../Data/Instruments/paramS_scrit_1.csv")
 
 instrument = instrument %>% 
   rename(
@@ -95,7 +95,7 @@ railways_census = railways_assembly_houses %>%
 
 # ==== Save data ====
 railways_assembly_houses %>% 
-  write_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
+  write_csv2("../Data/REGRESSION_DATA_Grundtvigianism.csv")
 
 railways_census %>% 
-  write_csv2("Data/REGRESSION_DATA_Demography.csv")
+  write_csv2("../Data/REGRESSION_DATA_Demography.csv")
