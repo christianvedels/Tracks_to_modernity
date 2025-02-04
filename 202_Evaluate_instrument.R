@@ -18,16 +18,16 @@ library(tidygeocoder)
 library(ggrepel)
 
 
-source("000_Functions.R") # Contains calc_rail()
+source("Data_cleaning_scripts/000_Functions.R") # Contains calc_rail()
 
 # ==== Load and merge instruments + finding instrment with best fit (RMSE) ====
 # Read files
-real_rail = read_csv2("../Data/Panel_of_railways_in_parishes.csv") %>%
+real_rail = read_csv2("Data/Panel_of_railways_in_parishes.csv") %>%
   filter(Year < 1877) # filter because instrument only up to 1876
 
-generated_rails = list.files("../Data/Instruments")
+generated_rails = list.files("Data/Instruments")
 instruments = foreach(f = generated_rails) %do% {
-  data_f = read_csv2(paste0("../Data/Instruments/", f)) %>%
+  data_f = read_csv2(paste0("Data/Instruments/", f)) %>%
     filter(Year < 1877) %>% 
     rename(
       Connected_rail_pred = Connected_rail,
