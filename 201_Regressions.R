@@ -113,7 +113,6 @@ grundtvig <- grundtvig %>%
 cat("Number of observations removed due to duplicate removal:", original_rows - nrow(grundtvig), "\n")
 
 # === Summary Statistics ===
-
 # 1) Census data
 stats_census <- describe(census[, c("Population", 
                            "Share_Manufacturing", 
@@ -175,6 +174,21 @@ kbl(stats_selected,
   group_rows("Panel A: Grundtvig", 1, 2) %>%
   group_rows("Panel B: Infrastructure", 3, 4)  %>%
   footnote(general = "Here is a general comments of the table. ")
+
+# ==== Densities ====
+p1 = census %>% 
+  group_by(GIS_ID) %>%
+  mutate(Ever_rail = ifelse(mean(RailAccess) > 0, "Yes", "No")) %>%
+  filter(Year == 1850) %>%
+  filter(RailAccess == 0) %>% # Exclude parishes with railways already
+  select(Ever_rail, Population, Share_Manufacturing) %>%
+  pivot_longer(c(Population, Share_Manufacturing), names_to = "var") %>%
+  ggplot(aes(x = value, fill = Ever_rail)) + 
+  geom_density(alpha = 0.5) + 
+  facet_wrap(~var, scales = "free") + 
+  theme_bw()
+
+ggsave("Plots/Densities.png", p1, width = 8, height = 4)
 
 
 # ==== TWFE regressions (Census data) ====
