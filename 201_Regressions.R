@@ -190,6 +190,24 @@ p1 = census %>%
 
 ggsave("Plots/Densities.png", p1, width = 8, height = 4)
 
+###############################
+# === Filter out IV nodes === #
+###############################
+
+# load nodes_distance data
+distance_to_nodes <- read_excel("Data/distance_to_nodes.xlsx")
+
+distance_to_nodes <- distance_to_nodes %>%
+  mutate(GIS_ID = as.character(GIS_ID))
+
+census <- left_join(census, distance_to_nodes, by = "GIS_ID")
+grundtvig <- left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
+
+
+# filter 10 km
+census_iv <- census %>% filter(min_distance_to_node_km > 10)
+grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 10)
+
 
 # ==== TWFE regressions (Census data) ====
 twfe1 = feols(
@@ -444,7 +462,7 @@ tsls1 = feols(
   lnPopulation ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -453,7 +471,7 @@ tsls2 = feols(
   lnChild_women_ratio ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -461,7 +479,7 @@ tsls3 = feols(
   Share_Manufacturing ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -469,7 +487,7 @@ tsls4 = feols(
   HISCAM ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -477,7 +495,7 @@ tsls5 = feols(
   lnMigration ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -490,31 +508,31 @@ etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]], tsls3$iv_first_stag
 # Reduced form TWFE with Instrument
 twfe1_red = feols(
   lnPopulation ~ LCPAccess | GIS_ID + Year,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 twfe2_red = feols(
   lnChild_women_ratio ~ LCPAccess | GIS_ID + Year,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 twfe3_red = feols(
   Share_Manufacturing ~ LCPAccess | GIS_ID + Year,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 twfe4_red = feols(
   HISCAM ~ LCPAccess | GIS_ID + Year,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 twfe5_red = feols(
   lnMigration ~ LCPAccess | GIS_ID + Year,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
@@ -527,7 +545,7 @@ cs_mod1 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates 
-  data = census,              # Your dataset
+  data = census_iv,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -538,7 +556,7 @@ cs_mod2 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census,              # Your dataset
+  data = census_iv,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -549,7 +567,7 @@ cs_mod3 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census,              # Your dataset
+  data = census_iv,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -560,7 +578,7 @@ cs_mod4 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census,              # Your dataset
+  data = census_iv,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -571,7 +589,7 @@ cs_mod5 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First (observed) year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census,              # Your dataset
+  data = census_iv,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -974,7 +992,7 @@ tsls1 = feols(
   Assembly_house ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = grundtvig,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
@@ -982,7 +1000,7 @@ tsls2 = feols(
   HighSchool ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = grundtvig,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
@@ -995,14 +1013,14 @@ etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]],
 twfe1_red <- feols(
   Assembly_house ~ LCPAccess 
   | GIS_ID + Year,
-  data = grundtvig,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
 twfe2_red <- feols(
   HighSchool ~ LCPAccess 
   | GIS_ID + Year,
-  data = grundtvig,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
@@ -1012,7 +1030,7 @@ out1 = att_gt(
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
-  data = grundtvig,
+  data = grundtvig_iv,
 )
 
 out2 = att_gt(
@@ -1020,7 +1038,7 @@ out2 = att_gt(
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
-  data = grundtvig,
+  data = grundtvig_iv,
 )
 
 # Aggregate the ATT
