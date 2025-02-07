@@ -450,7 +450,7 @@ min_treat_year = function(year, treat){
 
   min_treat = year[treat == 1] %>% min()
 
-  if(year < 1700){
+  if(min_treat < 1700){
     stop("There is no way that the treatment is before 1700")
   }
 
