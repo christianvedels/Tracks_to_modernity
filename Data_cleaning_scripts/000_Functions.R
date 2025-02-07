@@ -441,3 +441,20 @@ sub_scandi = function(x){
 }
 
 
+
+# ==== Min treat year for CS estimator ====
+min_treat_year = function(year, treat){
+  if(mean(treat) == 0){
+    return(0)
+  }
+
+  min_treat = year[treat == 1] %>% min()
+
+  if(year < 1700){
+    stop("There is no way that the treatment is before 1700")
+  }
+
+  return(min_treat)
+}
+
+
