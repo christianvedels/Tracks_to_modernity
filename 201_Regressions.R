@@ -257,8 +257,8 @@ census <- left_join(census, distance_to_nodes, by = "GIS_ID")
 grundtvig <- left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
 # filter 10 km
-census_iv <- census %>% filter(min_distance_to_node_km > 10)
-grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 10)
+census_iv <- census %>% filter(min_distance_to_node_km > 5)
+grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 5)
 
 ####################################################################################################
 # === Filter out parishes that gain access after 1876 (1880), because we dont instrument these === #
@@ -961,7 +961,7 @@ n_parishes <- c("Parishes",
                 length(unique(agg_mod5$DIDparams$data$GIS_ID)),
                 length(unique(agg_mod6$DIDparams$data$GIS_ID)))
 
-nodes_dropped <- c("Nodes dropped (<10km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+nodes_dropped <- c("Nodes dropped (<5km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
   
 # first stage f-statistic
 firstF <- c("F-test (1st stage)", 
