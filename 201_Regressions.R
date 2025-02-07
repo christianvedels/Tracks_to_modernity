@@ -1,4 +1,4 @@
-# Simple regressions
+# Regressions
 #
 # Date updated:   2025-01-21
 # Author:         Christian Vedel, Tom Görges
@@ -13,56 +13,52 @@ library(psych) # for summary stats
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
-# clear workspace
-rm(list = ls())
+# ==== Load data ====
+census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
+grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
+rail_panel = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 100000)
 
-# ==== Load and prepare Census data ====
-census <- read_csv2("Data/REGRESSION_DATA_Demography.csv") %>%
-  mutate(
+# ==== Clean census data ====
+census = census %>%
+  rename(
     # Rename and create new variables
     Population    = Pop,
-    HISCAM        = hiscam_avg,
+    HISCAM_avg        = hiscam_avg,
     Migration     = Born_different_county,
     RailAccess    = Connected_rail,
     RailDist      = Distance_to_nearest_railway,
     LCPAccess     = Connected_rail_instr,
-    LCPDist       = Distance_to_nearest_railway_instr,
-    
+    LCPDist       = Distance_to_nearest_railway_instr
+  ) %>%
+  mutate(
     # Create logged variables
-    lnPopulation       = log(Pop),
+    lnPopulation       = log(Population),
     lnManufacturing    = log(Manufacturing_789 + 1),
     lnFarming          = log(Farming + 1),
     lnChild_women_ratio = log(Child_women_ratio + 1),
-    lnHISCAM           = log(HISCAM),
+    lnHISCAM_avg       = log(HISCAM_avg),
     lnMigration        = log(Migration + 1),
     
     # Convert Year and GIS_ID for subsequent operations
     Year_num = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
-  ) 
+  )
 
 # Create Treat_year variable
-census <- census %>%
+census = census %>%
   group_by(GIS_ID) %>%
   mutate(
-    Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0),
-    Treat_year = ifelse(Treat_year > 0, Treat_year, 0),
-    Treat_year_instr = ifelse(any(Connected_rail_instr == 1), min(Year[Connected_rail_instr == 1]), 0),
-    Treat_year_instr = ifelse(Treat_year_instr > 0, Treat_year_instr, 0)
+    Treat_year = min_treat_year(Year, RailAccess),
+    Treat_year_instr = min_treat_year(Year, LCPAccess)
   ) %>%
   ungroup()
 
 # Create Not agriculture
-census$lnNotAgriculture <- log(1 +
-  census$hisco_major0 +
-  census$hisco_major1 +
-  census$hisco_major2 +
-  census$hisco_major3 +
-  census$hisco_major4 +
-  census$hisco_major5 +
-  census$hisco_major7 +
-  census$hisco_major8 +
-  census$hisco_major9
+census = census %>% mutate(
+  NotAgriculture = hisco_major0 + hisco_major1 + hisco_major2 + hisco_major3 + hisco_major4 + hisco_major5 + hisco_major7 + hisco_major8 + hisco_major9
+) %>%
+  mutate(
+    lnNotAgriculture = log(1 + NotAgriculture)
   )
 
 
@@ -79,37 +75,40 @@ census <- census %>%
 # Calculate and display the number of observations removed
 cat("Number of observations removed due to duplicate removal:", original_rows - nrow(census), "\n")
 
-# ==== Load and prepare Grundtvig data ====
-grundtvig <- read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv") %>%
-  mutate(
+# ==== Clean Grundtvig data ====
+grundtvig = grundtvig %>%
+  rename(
     RailAccess = Connected_rail,
-    RailDist   = Distance_to_nearest_railway,
-    LCPAccess  = Connected_rail_instr,
-    LCPDist    = Distance_to_nearest_railway_instr,
+    LCPAccess  = Connected_rail_instr
+  ) %>% 
+  mutate(
     Year_num   = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
   )
 
 # Create Treat_year variable
-grundtvig <- grundtvig %>%
+grundtvig = grundtvig %>%
   group_by(GIS_ID) %>%
   mutate(
-    Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0),
-    Treat_year = ifelse(Treat_year > 0, Treat_year, 0),
-    Treat_year_instr = ifelse(any(Connected_rail_instr == 1), min(Year[Connected_rail_instr == 1]), 0),
-    Treat_year_instr = ifelse(Treat_year_instr > 0, Treat_year_instr, 0)
+    Treat_year = min_treat_year(Year, RailAccess),
+    Treat_year_instr = min_treat_year(Year, LCPAccess)
   ) %>%
   ungroup()
 
-# filter years?
-grundtvig <- grundtvig %>% filter(Year < 1930) # max. expansion in 1929, after that start closing down
-
 # Redefine Assembly_house as a dummy
-grundtvig$Assembly_house <- ifelse(grundtvig$Assembly_house > 0, 1, grundtvig$Assembly_house)
+grundtvig = grundtvig %>%
+  mutate(
+    Assembly_house = ifelse(Assembly_house > 0, 1, Assembly_house),
+    HighSchool = ifelse(HighSchool > 0, 1, HighSchool)
+  ) %>%
+  # NA in assembly house means 0 
+  mutate(
+    Assembly_house = replace_na(Assembly_house, 0),
+  )
 
-# Redefine HighSchool as a dummy
-grundtvig$HighSchool <- ifelse(grundtvig$HighSchool > 0, 1, grundtvig$HighSchool)
-
+# Aline to same period as census data
+grundtvig = grundtvig %>%
+  filter(Year <= 1920)
 
 # === Delete duplicates Grundtvig ===
 
@@ -130,7 +129,7 @@ stats_census <- describe(census[, c("Population",
                            "lnManufacturing",
                            "lnNotAgriculture",
                            "Child_women_ratio", 
-                           "HISCAM", 
+                           "HISCAM_avg", 
                            "Migration", 
                            "RailAccess",
                            "LCPAccess")])
@@ -189,93 +188,195 @@ kbl(stats_selected,
   footnote(general = "Here is a general comments of the table. ")
 
 # ==== Densities ====
-
-p1 <- census %>%
+p1 = census %>%
   group_by(GIS_ID) %>%
   mutate(Ever_rail = case_when(mean(RailAccess) > 0 ~ "Yes", TRUE ~ "No")) %>%
   filter(Year == 1850, RailAccess == 0) %>%  # Exclude parishes with railways already
-  select(Ever_rail, lnPopulation, lnChild_women_ratio, 
-         lnManufacturing, lnNotAgriculture, HISCAM, lnMigration) %>%
-  pivot_longer(cols = c(lnPopulation, lnChild_women_ratio, 
-                        lnManufacturing, lnNotAgriculture, HISCAM, lnMigration), 
-               names_to = "var") %>%
+  mutate(
+    lnpop1801 = log(Pop1801)
+  ) %>%
+  select(
+    Ever_rail, 
+    lnPopulation, 
+    lnChild_women_ratio, 
+    lnManufacturing, 
+    lnNotAgriculture, 
+    HISCAM_avg, 
+    lnMigration,
+    dist_hmb,
+    dist_cph,
+    Boulder_clay_pct,
+    area_parish, 
+    DistOxRoad,
+    Distance_market_town,
+    lnpop1801
+  ) %>%
+  pivot_longer(
+    cols = c(
+      lnPopulation,
+      lnChild_women_ratio, 
+      lnManufacturing, 
+      lnNotAgriculture, 
+      HISCAM_avg, 
+      lnMigration, 
+      dist_hmb,
+      dist_cph,
+      Boulder_clay_pct,
+      area_parish, 
+      DistOxRoad,
+      Distance_market_town,
+      lnpop1801
+    ), 
+    names_to = "var"
+  ) %>%
+  mutate(
+    var = case_when(
+      var == "lnPopulation" ~ "log(Population 1850)",
+      var == "lnpop1801" ~ "log(Population 1801)",	
+      var == "lnChild_women_ratio" ~ "log(Child-women ratio + 1)",
+      var == "lnManufacturing" ~ "log(Manufacturing + 1)",
+      var == "lnNotAgriculture" ~ "log(Not agriculture + 1)",
+      var == "HISCAM_avg" ~ "HISCAM_avg",
+      var == "lnMigration" ~ "log(Migration)",
+      var == "dist_hmb" ~ "Distance to Hamburg",
+      var == "dist_cph" ~ "Distance to Copenhagen",
+      var == "Boulder_clay_pct" ~ "Boulder clay (%)",
+      var == "area_parish" ~ "Area of parish",
+      var == "DistOxRoad" ~ "Distance to Oxroad",
+      var == "Distance_market_town" ~ "Distance to market town",
+      TRUE ~ var
+    )
+  ) %>%
   ggplot(aes(x = value, fill = Ever_rail)) +
-  geom_density(alpha = 0.6) + 
+  geom_density(alpha = 0.5) + 
   facet_wrap(~var, scales = "free", ncol = 3) +  # columns layout
-  scale_fill_manual(values = c("Yes" = "#0072B2", "No" = "#D55E00")) + # Better color contrast
+  scale_fill_manual(values = c("Yes" = colours$red, "No" = colours$black)) + # Better color contrast
   theme_minimal(base_size = 14) + 
-  labs(fill = "Rail access:") +
+  labs(fill = "Was it eventually connected to the railway?") +
   theme(
     legend.position = "bottom",
     legend.title = element_text(),
     strip.text = element_text(face = "bold", size = 12),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
-  )
+  ) + 
+  theme_bw() +
+  labs(
+    x = "",
+    y = ""
+  ) + 
+  theme(legend.position = "bottom")
 
 p1
 
-ggsave("Plots/Densities_census.png", p1, width = 8, height = 4)
+ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height)
 
-# -------
-p2 <- grundtvig %>%
+# Grundtvig
+p1 = grundtvig %>%
   group_by(GIS_ID) %>%
   mutate(Ever_rail = case_when(mean(RailAccess) > 0 ~ "Yes", TRUE ~ "No")) %>%
-  select(Ever_rail, Assembly_house, HighSchool) %>%
-  pivot_longer(cols = c(Assembly_house, HighSchool), 
-               names_to = "var") %>%
-  ggplot(aes(x = value, fill = Ever_rail)) +
-  geom_density(alpha = 0.6) + 
-  facet_wrap(~var, scales = "free", ncol = 3) +  # columns layout
-  scale_fill_manual(values = c("Yes" = "#0072B2", "No" = "#D55E00")) + # Better color contrast
-  theme_minimal(base_size = 14) + 
-  labs(fill = "Rail access:") +
-  theme(
-    legend.position = "bottom",
-    legend.title = element_text(),
-    strip.text = element_text(face = "bold", size = 12),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank()
-  )
+  select(Year, Ever_rail, Assembly_house, HighSchool) %>%
+  pivot_longer(
+    cols = c(Assembly_house, HighSchool),
+    names_to = "var"
+  ) %>%
+  mutate(
+    var = case_when(
+      var == "Assembly_house" ~ "Share of parishes with an assembly house",
+      var == "HighSchool" ~ "Share of parishes with a folk high school",
+    )
+  ) %>%
+  group_by(var, Year, Ever_rail) %>%
+  summarise(
+    share = mean(value, na.rm = TRUE)
+  ) %>%
+  ggplot(aes(x = Year, y = share, col = Ever_rail)) +
+  geom_line() +
+  geom_point() + 
+  facet_wrap(~var, scales = "free", ncol = 1) + 
+  theme_bw() + 
+  scale_color_manual(values = c("Yes" = colours$red, "No" = colours$black)) + 
+  labs(col = "Was it eventually connected to the railway?") + 
+  theme(legend.position = "bottom") + 
+  labs(y  = "")
 
-p2
+p1
+ggsave("Plots/Grundtvig_over_time.png", p1, width = 0.75*dims$width, height = 1.5*dims$height)
 
-ggsave("Plots/Densities_grundtvig.png", p2, width = 8, height = 4)
 ###############################
 # === Filter out IV nodes === #
 ###############################
 
 # load nodes_distance data
-distance_to_nodes <- read_excel("Data/distance_to_nodes.xlsx")
+distance_to_nodes = read_excel("Data/distance_to_nodes.xlsx")
 
-distance_to_nodes <- distance_to_nodes %>%
-  mutate(GIS_ID = as.character(GIS_ID))
+distance_to_nodes = distance_to_nodes %>%
+  mutate(GIS_ID = as.character(GIS_ID)) %>%
+  mutate(
+    away_from_node = ifelse(min_distance_to_node_km > 10, 1, 0)
+  )
 
-census <- left_join(census, distance_to_nodes, by = "GIS_ID")
-grundtvig <- left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
-
-# filter 5 km
-census_iv <- census %>% filter(min_distance_to_node_km > 5)
-grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 5)
+census = left_join(census, distance_to_nodes, by = "GIS_ID")
+grundtvig = left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
 ####################################################################################################
-# === Filter out parishes that gain access after 1876 (1880), because we dont instrument these === #
+# === Filter for parishes that are connected later === #
 ####################################################################################################
-rail_panel <- read.csv2("Data/Panel_of_railways_in_parishes.csv")
-
-later_connected_GIS_ID <- rail_panel %>% 
+later_connected_GIS_ID = rail_panel %>% 
   filter(Year > 1876) %>%
+  filter(Year < 1920) %>%
+  group_by(GIS_ID) %>%
+  summarise(
+    Connected_rail = max(Connected_rail)
+  ) %>% 
   filter(Connected_rail == 1) %>%
-  select(GIS_ID) %>%
-  unlist()
-  
+  pull(GIS_ID)
 
-census_iv <- census_iv %>% filter(Treat_year <= 1880)
-grundtvig_iv <- grundtvig_iv %>% filter(Treat_year <= 1876)
+earlier_connected_GIS_ID = rail_panel %>% 
+  filter(Year <= 1876) %>%
+  filter(Year < 1920) %>%
+  group_by(GIS_ID) %>%
+  summarise(
+    Connected_rail = max(Connected_rail)
+  ) %>% 
+  filter(Connected_rail == 1) %>% 
+  pull(GIS_ID)
 
-table(census$Treat_year)
-table(grundtvig_iv$Treat_year)
-table(census_iv$Treat_year)
+invalid_comparison = data.frame(
+  GIS_ID = rail_panel$GIS_ID %>% unique()
+) %>%
+  mutate(
+    connected_later = 1*(GIS_ID %in% later_connected_GIS_ID),
+    connected_earlier = 1*(GIS_ID %in% earlier_connected_GIS_ID)
+  ) %>%
+  mutate(
+    never_connected = ifelse(connected_later == 0 & connected_earlier == 0, 1, 0)
+  ) %>%
+  mutate(
+    only_connected_later = ifelse(connected_later == 1 & connected_earlier == 0, 1, 0),
+  ) %>%
+  mutate(
+    invalid_comparison = ifelse(only_connected_later == 1, 1, 0)
+  ) %>% 
+  select(GIS_ID, invalid_comparison)
+
+census = left_join(census, invalid_comparison, by = "GIS_ID")
+grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
+
+census %>% distinct(Treat_year)
+grundtvig %>% distinct(Treat_year)
+
+census_cs = census %>% 
+  filter(invalid_comparison == 0) %>%
+  filter(away_from_node == 1)
+
+grundtvig_cs = grundtvig %>%
+  filter(invalid_comparison == 0) %>%
+  filter(away_from_node == 1)
+
+census_cs %>% distinct(Treat_year)
+grundtvig_cs %>% distinct(Treat_year)
+
 
 #######################
 # === Regressions === #
@@ -307,7 +408,7 @@ twfe4 = feols(
 )
 
 twfe5 = feols(
-  HISCAM ~ RailAccess | GIS_ID + Year,
+  HISCAM_avg ~ RailAccess | GIS_ID + Year,
   data = census,
   cluster = ~ GIS_ID
 )
@@ -324,6 +425,12 @@ etable(twfe1, twfe2, twfe3, twfe4, twfe5, twfe6,
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1)) # Custom significance codes
 
+etable(twfe1, twfe2, twfe3, twfe4, twfe5, twfe6,
+       fitstat = ~ ar2 + n,  # Include R-squared and number of observations
+       cluster = "GIS_ID", # Display the clustering
+       signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
+       tex = TRUE
+       ) 
 
 # ==== Doubly Robust DID: Development ====
 
@@ -371,9 +478,9 @@ cs_mod4 <- att_gt(
   clustervars = "GIS_ID"      # Cluster variable
 )
 
-# HISCAM
+# HISCAM_avg
 cs_mod5 <- att_gt(
-  yname = "HISCAM",          # Outcome variable
+  yname = "HISCAM_avg",          # Outcome variable
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
@@ -401,16 +508,29 @@ agg_mod4 <- aggte(cs_mod4, type = "simple")
 agg_mod5 <- aggte(cs_mod5, type = "simple")
 agg_mod6 <- aggte(cs_mod6, type = "simple")
 
-
 # Summary
-summary(agg_mod1)
-summary(agg_mod2)
-summary(agg_mod3)
-summary(agg_mod4)
-summary(agg_mod5)
-summary(agg_mod6)
+summary(agg_mod1) # Pop
+summary(agg_mod2) # Child w ratio
+summary(agg_mod3) # Manufacturing
+summary(agg_mod4) # Not agriculture
+summary(agg_mod5) # HISCAM
+summary(agg_mod6) # Migration
 
+# Aggregate the ATT
+agg_mod1_dyn <- aggte(cs_mod1, type = "calendar")
+agg_mod2_dyn <- aggte(cs_mod2, type = "calendar")
+agg_mod3_dyn <- aggte(cs_mod3, type = "calendar")
+agg_mod4_dyn <- aggte(cs_mod4, type = "calendar")
+agg_mod5_dyn <- aggte(cs_mod5, type = "calendar")
+agg_mod6_dyn <- aggte(cs_mod6, type = "calendar")
 
+# Plots 
+agg_mod1_dyn %>% ggdid()
+agg_mod2_dyn %>% ggdid()
+agg_mod3_dyn %>% ggdid()
+agg_mod4_dyn %>% ggdid()
+agg_mod5_dyn %>% ggdid()
+agg_mod6_dyn %>% ggdid()
 
 # === Create Latex output table ===
 
@@ -577,15 +697,16 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 6), escape = F) %>%
-  group_rows("Panel A: TWFE", 1, 5) %>%
-  group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>%
-  footnote(
-    general = "Notes: This table...",
-    number = c("Clustered (Parish) Standard errors in parentheses."),
-    symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-    threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-    escape = FALSE          # Allows LaTeX symbols in the notes
-  )
+  # group_rows("Panel A: TWFE", 1, 5) %>%
+  # group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>%
+  # footnote(
+  #   general = "Notes: This table...",
+  #   number = c("Clustered (Parish) Standard errors in parentheses."),
+  #   symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
+  #   threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
+  #   escape = FALSE          # Allows LaTeX symbols in the notes
+  # )
+  print()
 
 
 ##########################################
@@ -597,7 +718,7 @@ tsls1 = feols(
   lnPopulation ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
@@ -605,7 +726,7 @@ tsls2 = feols(
   lnChild_women_ratio ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
@@ -613,7 +734,7 @@ tsls3 = feols(
   lnManufacturing ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
@@ -621,15 +742,15 @@ tsls4 = feols(
   lnNotAgriculture ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
 tsls5 = feols(
-  HISCAM ~ 1 
+  HISCAM_avg ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
@@ -637,7 +758,7 @@ tsls6 = feols(
   lnMigration ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = census_iv,
+  data = census,
   cluster = ~ GIS_ID
 )
 
@@ -647,41 +768,50 @@ etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]], tsls3$iv_first_stag
        tex = TRUE,
        title = "First-Stage Estimates (With Nodes)")
 
+# second stage
+etable(
+  list(tsls1, tsls2, tsls3, tsls4, tsls5, tsls6)
+)
+
 # Reduced form TWFE with Instrument
 twfe1_red = feols(
   lnPopulation ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  data = census_cs,
   cluster = ~ GIS_ID
 )
 
 twfe2_red = feols(
   lnChild_women_ratio ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  data = census_cs,
   cluster = ~ GIS_ID
 )
 
 twfe3_red = feols(
   lnManufacturing ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  data = census_cs,
   cluster = ~ GIS_ID
 )
 
 twfe4_red = feols(
   lnNotAgriculture ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  data = census_cs,
   cluster = ~ GIS_ID
 )
 
 twfe5_red = feols(
-  HISCAM ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  HISCAM_avg ~ LCPAccess | GIS_ID + Year,
+  data = census_cs,
   cluster = ~ GIS_ID
 )
 
 twfe6_red = feols(
   lnMigration ~ LCPAccess | GIS_ID + Year,
-  data = census_iv,
+  data = census_cs,
   cluster = ~ GIS_ID
+)
+
+etable(
+  list(twfe1_red, twfe2_red, twfe3_red, twfe4_red, twfe5_red, twfe6_red)
 )
 
 ### Reduced form CS
@@ -693,7 +823,7 @@ cs_mod1 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates 
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -704,7 +834,7 @@ cs_mod2 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -715,7 +845,7 @@ cs_mod3 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -726,18 +856,18 @@ cs_mod4 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
-# HISCAM
+# HISCAM_avg
 cs_mod5 <- att_gt(
-  yname = "HISCAM",          # Outcome variable
+  yname = "HISCAM_avg",          # Outcome variable
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -748,7 +878,7 @@ cs_mod6 <- att_gt(
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First (observed) year of treatment
   xformla = ~1,               # No covariates (consistent with TWFE)
-  data = census_iv,              # Your dataset
+  data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
@@ -761,12 +891,12 @@ agg_mod5 <- aggte(cs_mod5, type = "simple")
 agg_mod6 <- aggte(cs_mod6, type = "simple")
 
 # Summary
-summary(agg_mod1)
-summary(agg_mod2)
-summary(agg_mod3)
-summary(agg_mod4)
-summary(agg_mod5)
-summary(agg_mod6)
+summary(agg_mod1) # Pop
+summary(agg_mod2) # Child w ratio
+summary(agg_mod3) # Manufacturing
+summary(agg_mod4) # Not agriculture
+summary(agg_mod5) # HISCAM
+summary(agg_mod6) # Migration
 
 
 # === Create Latex output table ===
@@ -1006,16 +1136,17 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 6), escape = F) %>%
-  group_rows("Panel A: 2SLS", 1, 6) %>%
-  group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
-  group_rows("Panel C: CS Reduced Form", 12, 15) %>%
-  footnote(
-    general = "Notes: This table...",
-    number = c("Clustered (Parish) Standard errors in parentheses."),
-    symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-    threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-    escape = FALSE          # Allows LaTeX symbols in the notes
-  )
+  # group_rows("Panel A: 2SLS", 1, 6) %>%
+  # group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
+  # group_rows("Panel C: CS Reduced Form", 12, 15) %>%
+  # footnote(
+  #   general = "Notes: This table...",
+  #   number = c("Clustered (Parish) Standard errors in parentheses."),
+  #   symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
+  #   threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
+  #   escape = FALSE          # Allows LaTeX symbols in the notes
+  # )
+  print()
 
 ######################
 # ==== Grundtvig === #
@@ -1057,13 +1188,18 @@ out2 = att_gt(
 )
 
 # Aggregate the ATT
-agg_mod1 <- aggte(out1, type = "simple", na.rm = T)
-agg_mod2 <- aggte(out2, type = "simple", na.rm = T)
+agg_mod1 <- aggte(out1, type = "simple")
+agg_mod2 <- aggte(out2, type = "simple")
 
 # Summary
 summary(agg_mod1)
 summary(agg_mod2)
 
+# Dynamic summary
+agg_mod1_dyn = aggte(out1, type = "dynamic")
+agg_mod2_dyn = aggte(out2, type = "dynamic")
+agg_mod1_dyn %>% ggdid()
+agg_mod2_dyn %>% ggdid()
 
 # === Create Latex output table ===
 
@@ -1191,8 +1327,8 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 2), escape = F) %>%
-  group_rows("Panel A: TWFE", 1, 5) %>%
-  group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>% 
+  # group_rows("Panel A: TWFE", 1, 5) %>%
+  # group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>% 
   footnote(
     general = "Notes: This table...",
     number = c("Clustered (Parish) Standard errors in parentheses."),
@@ -1207,7 +1343,7 @@ tsls1 = feols(
   Assembly_house ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = grundtvig_iv,
+  data = grundtvig,
   cluster = ~ GIS_ID
 )
 
@@ -1215,7 +1351,7 @@ tsls2 = feols(
   HighSchool ~ 1 
   | GIS_ID + Year 
   | RailAccess ~ LCPAccess,
-  data = grundtvig_iv,
+  data = grundtvig,
   cluster = ~ GIS_ID
 )
 
@@ -1224,17 +1360,22 @@ etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]],
        tex = TRUE,
        title = "First-Stage Estimates (With Nodes)")
 
+# second stage
+etable(tsls1, tsls2,
+       tex = TRUE,
+       title = "First-Stage Estimates (With Nodes)")
+
 twfe1_red <- feols(
   Assembly_house ~ LCPAccess 
   | GIS_ID + Year,
-  data = grundtvig_iv,
+  data = grundtvig_cs,
   cluster = ~ GIS_ID
 )
 
 twfe2_red <- feols(
   HighSchool ~ LCPAccess 
   | GIS_ID + Year,
-  data = grundtvig_iv,
+  data = grundtvig_cs,
   cluster = ~ GIS_ID
 )
 
@@ -1245,7 +1386,7 @@ out1 = att_gt(
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
-  data = grundtvig_iv,
+  data = grundtvig_cs,
 )
 
 out2 = att_gt(
@@ -1253,7 +1394,7 @@ out2 = att_gt(
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
-  data = grundtvig_iv,
+  data = grundtvig_cs,
 )
 
 # Aggregate the ATT
