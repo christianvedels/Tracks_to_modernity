@@ -62,7 +62,7 @@ ggplot() + # Not important
     data = tmp
   )
   
-tmp$missing %>% sum() # 31 is not linked
+tmp$missing %>% sum() # 32 is not linked
 
 # ==== Create panel ====
 panel_assembly_houses = assembly_houses %>% 
