@@ -9,20 +9,20 @@ library(tidyverse)
 library(foreach)
 
 # ==== Load data ====
-railways = read_csv2("../Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
-railways_StateTrunk = read_csv2("../Data/Panels_by_type/type2_StateTrunk.csv")
-railways_StateNonTrunk = read_csv2("../Data/Panels_by_type/type2_StateNonTrunk.csv")
-railways_Private = read_csv2("../Data/Panels_by_type/type2_Private.csv")
+railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
+railways_StateTrunk = read_csv2("Data/Panels_by_type/type2_StateTrunk.csv")
+railways_StateNonTrunk = read_csv2("Data/Panels_by_type/type2_StateNonTrunk.csv")
+railways_Private = read_csv2("Data/Panels_by_type/type2_Private.csv")
 
-Assembly_houses = read_csv2("../Data/Panel_of_assembly_houses.csv", guess_max = 10000)
-Assembly_houses_MA = read_csv2("../Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
+Assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv", guess_max = 10000)
+Assembly_houses_MA = read_csv2("Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
 
-Folk_high_schools = read_csv2("../Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
-Folk_high_schools_MA = read_csv2("../Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools = read_csv2("Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools_MA = read_csv2("Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
 
-census = read_csv2("../Data/Census_data.csv", guess_max = 10000)  
+census = read_csv2("Data/Census_data.csv", guess_max = 10000)  
 
-geo = read_csv2("../Data/Geo_info.csv", guess_max = 2000)
+geo = read_csv2("Data/Geo_info.csv", guess_max = 2000)
 
 # ==== Join different raildata ====
 railways_StateTrunk = railways_StateTrunk %>% select(-type2)
@@ -41,13 +41,29 @@ railways = railways %>%
   )
 
 # ==== Load instrument ====
-instrument = read_csv2("../Data/Instruments/paramS_scrit_1.csv")
+instrument = read_csv2("Data/Instruments/paramS_scrit_1.csv")
 
 instrument = instrument %>% 
   rename(
     Connected_rail_instr = Connected_rail,
     Distance_to_nearest_railway_instr = Distance_to_nearest_railway
   )
+
+# Forward imputation until 1920
+tmp1901 = instrument %>% filter(Year == 1901)
+years_to_add = 1902:1920
+years_added = foreach(g = tmp1901$GIS_ID, .combine = "bind_rows") %do% {
+  res = data.frame(
+    Year = years_to_add,
+    GIS_ID = g,
+    Connected_rail_instr = tmp1901 %>% filter(GIS_ID == g) %>% pull(Connected_rail_instr),
+    Distance_to_nearest_railway_instr = tmp1901 %>% filter(GIS_ID == g) %>% pull(Distance_to_nearest_railway_instr)
+  )
+
+  return(res)
+}
+
+instrument = instrument %>% bind_rows(years_added)
 
 railways = railways %>% 
   left_join(instrument, by = c("GIS_ID", "Year"))
@@ -88,14 +104,15 @@ railways_assembly_houses = railways %>%
   select(-Parish) %>% 
   left_join(geo, by = "GIS_ID") %>% 
   left_join(pop1787, by = "GIS_ID") %>% 
-  left_join(pop1801, by = "GIS_ID")
+  left_join(pop1801, by = "GIS_ID") %>%
+  filter(Year <= 1920)
 
 railways_census = railways_assembly_houses %>% 
   inner_join(census, by = c("GIS_ID", "Year"))
 
 # ==== Save data ====
 railways_assembly_houses %>% 
-  write_csv2("../Data/REGRESSION_DATA_Grundtvigianism.csv")
+  write_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
 
 railways_census %>% 
-  write_csv2("../Data/REGRESSION_DATA_Demography.csv")
+  write_csv2("Data/REGRESSION_DATA_Demography.csv")
