@@ -14,22 +14,8 @@ library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
-xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year"
-# xformula = "1"
-
-# var == "lnPopulation" ~ "log(Population 1850)",
-#       var == "lnpop1801" ~ "log(Population 1801)",	
-#       var == "lnChild_women_ratio" ~ "log(Child-women ratio + 1)",
-#       var == "lnManufacturing" ~ "log(Manufacturing + 1)",
-#       var == "lnNotAgriculture" ~ "log(Not agriculture + 1)",
-#       var == "HISCAM_avg" ~ "HISCAM_avg",
-#       var == "lnMigration" ~ "log(Migration)",
-#       var == "dist_hmb" ~ "Distance to Hamburg",
-#       var == "dist_cph" ~ "Distance to Copenhagen",
-#       var == "Boulder_clay_pct" ~ "Boulder clay (%)",
-#       var == "area_parish" ~ "Area of parish",
-#       var == "DistOxRoad" ~ "Distance to Oxroad",
-#       var == "Distance_market_town" ~ "Distance to market town",
+#xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
+xformula = "1"
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
@@ -41,7 +27,7 @@ census = census %>%
   rename(
     # Rename and create new variables
     Population    = Pop,
-    HISCAM_avg        = hiscam_avg,
+    HISCAM_avg    = hiscam_avg,
     Migration     = Born_different_county,
     RailAccess    = Connected_rail,
     RailDist      = Distance_to_nearest_railway,
@@ -71,6 +57,18 @@ census = census %>%
     # Cut Dist_hamb into quantiles
     Dist_hamb_decile = cut(dist_hmb, breaks = unique(quantile(dist_hmb, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
     Dist_hamb_year = paste(Dist_hamb_decile, Year, sep = "_"),
+    
+    # Cut Dist_cph into quantiles
+    Dist_cph_decile = cut(dist_cph, breaks = unique(quantile(dist_cph, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_cph_year = paste(Dist_cph_decile, Year, sep = "_"),
+    
+    # Cut Dist_cph into quantiles
+    Dist_ox_decile = cut(DistOxRoad, breaks = unique(quantile(DistOxRoad, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_ox_year = paste(Dist_ox_decile, Year, sep = "_"),
+    
+    # Cut Dist_mt into quantiles
+    Dist_mt_decile = cut(Distance_market_town, breaks = unique(quantile(Distance_market_town, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_mt_year = paste(Dist_mt_decile, Year, sep = "_"),
 
     # Cut pop 1801 into quantiles
     Pop1801_decile = cut(Pop1801, breaks = unique(quantile(Pop1801, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
@@ -132,7 +130,7 @@ grundtvig = grundtvig %>%
   ) %>%
   ungroup()
 
-# Redefine Assembly_house as a dummy
+# Redefine Assembly_house and High School as a dummy
 grundtvig = grundtvig %>%
   mutate(
     Assembly_house = ifelse(Assembly_house > 0, 1, Assembly_house),
@@ -143,7 +141,7 @@ grundtvig = grundtvig %>%
     Assembly_house = replace_na(Assembly_house, 0),
   )
 
-# Aline to same period as census data
+# Aline period
 grundtvig = grundtvig %>%
   filter(Year <= 1920)
 
@@ -495,7 +493,7 @@ cs_mod2 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -506,7 +504,7 @@ cs_mod3 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -517,7 +515,7 @@ cs_mod4 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -528,7 +526,7 @@ cs_mod5 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -539,18 +537,18 @@ cs_mod6 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First (observed) year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
 # Aggregate the ATT
-agg_mod1 <- aggte(cs_mod1, type = "simple")
-agg_mod2 <- aggte(cs_mod2, type = "simple")
-agg_mod3 <- aggte(cs_mod3, type = "simple")
-agg_mod4 <- aggte(cs_mod4, type = "simple")
-agg_mod5 <- aggte(cs_mod5, type = "simple")
-agg_mod6 <- aggte(cs_mod6, type = "simple")
+agg_mod1 <- aggte(cs_mod1, type = "simple", na.rm = T)
+agg_mod2 <- aggte(cs_mod2, type = "simple", na.rm = T)
+agg_mod3 <- aggte(cs_mod3, type = "simple", na.rm = T)
+agg_mod4 <- aggte(cs_mod4, type = "simple", na.rm = T)
+agg_mod5 <- aggte(cs_mod5, type = "simple", na.rm = T)
+agg_mod6 <- aggte(cs_mod6, type = "simple", na.rm = T)
 
 # Summary
 summary(agg_mod1) # Pop
@@ -561,12 +559,12 @@ summary(agg_mod5) # HISCAM
 summary(agg_mod6) # Migration
 
 # Aggregate the ATT
-agg_mod1_dyn <- aggte(cs_mod1, type = "calendar")
-agg_mod2_dyn <- aggte(cs_mod2, type = "calendar")
-agg_mod3_dyn <- aggte(cs_mod3, type = "calendar")
-agg_mod4_dyn <- aggte(cs_mod4, type = "calendar")
-agg_mod5_dyn <- aggte(cs_mod5, type = "calendar")
-agg_mod6_dyn <- aggte(cs_mod6, type = "calendar")
+agg_mod1_dyn <- aggte(cs_mod1, type = "calendar", na.rm = T)
+agg_mod2_dyn <- aggte(cs_mod2, type = "calendar", na.rm = T)
+agg_mod3_dyn <- aggte(cs_mod3, type = "calendar", na.rm = T)
+agg_mod4_dyn <- aggte(cs_mod4, type = "calendar", na.rm = T)
+agg_mod5_dyn <- aggte(cs_mod5, type = "calendar", na.rm = T)
+agg_mod6_dyn <- aggte(cs_mod6, type = "calendar", na.rm = T)
 
 # Plots 
 agg_mod1_dyn %>% ggdid()
@@ -722,9 +720,12 @@ did_n_parishes <- c("Parishes",
                     length(unique(agg_mod5$DIDparams$data$GIS_ID)),
                     length(unique(agg_mod6$DIDparams$data$GIS_ID)))
 
+controls <- c("Controls", 
+              if (xformula == 1) rep("No", 6) else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 6))
+
 
 # bind together for output table
-results <- rbind(twfe_coef, twfe_se, parish_fe, year_fe, twfe_obs, did_coef, did_se, did_obs, did_n_parishes, mean_outcome)
+results <- rbind(twfe_coef, twfe_se, parish_fe, year_fe, twfe_obs, did_coef, did_se, did_obs, did_n_parishes, mean_outcome, controls)
 colnames(results) <- c(" ", "(1)", "(2)", "(3)", "(4)", "(5)", "(6)")
 
 
@@ -741,16 +742,8 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 6), escape = F) %>%
-  # group_rows("Panel A: TWFE", 1, 5) %>%
-  # group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>%
-  # footnote(
-  #   general = "Notes: This table...",
-  #   number = c("Clustered (Parish) Standard errors in parentheses."),
-  #   symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-  #   threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-  #   escape = FALSE          # Allows LaTeX symbols in the notes
-  # )
-  print()
+  group_rows("Panel A: TWFE", 1, 5) %>%
+  group_rows("Panel B: Callaway and Sant'Anna", 6, 9) 
 
 
 ##########################################
