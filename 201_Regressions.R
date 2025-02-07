@@ -39,11 +39,12 @@ census <- read_csv2("Data/REGRESSION_DATA_Demography.csv") %>%
     # Convert Year and GIS_ID for subsequent operations
     Year_num = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
-  ) %>%
+  ) 
+
+# Create Treat_year variable
+census <- census %>%
   group_by(GIS_ID) %>%
   mutate(
-    # Identify the first year with Connected_rail equal to 1;
-    # if none exist, set Treat_year to 0
     Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0),
     Treat_year = ifelse(Treat_year > 0, Treat_year, 0),
     Treat_year_instr = ifelse(any(Connected_rail_instr == 1), min(Year[Connected_rail_instr == 1]), 0),
@@ -87,30 +88,35 @@ grundtvig <- read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv") %>%
     LCPDist    = Distance_to_nearest_railway_instr,
     Year_num   = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
-  ) %>%
-  group_by(GIS_ID) %>%
-  mutate(
-    # Identify the first year when Connected_rail is 1
-    Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0),
-    # Ensure Treat_year is consistent across groups
-    Treat_year = ifelse(Treat_year > 0, Treat_year, 0)
-  ) %>%
-  ungroup()
+  )
 
-# Compute Treat_year_instr
+# Create Treat_year variable
 grundtvig <- grundtvig %>%
   group_by(GIS_ID) %>%
-  mutate(Treat_year_instr = ifelse(any(LCPAccess == 1, na.rm = TRUE), 
-                                   min(Year_num[LCPAccess == 1], na.rm = TRUE), 
-                                   0)) %>%
+  mutate(
+    Treat_year = ifelse(any(Connected_rail == 1), min(Year[Connected_rail == 1]), 0),
+    Treat_year = ifelse(Treat_year > 0, Treat_year, 0),
+    Treat_year_instr = ifelse(any(Connected_rail_instr == 1), min(Year[Connected_rail_instr == 1]), 0),
+    Treat_year_instr = ifelse(Treat_year_instr > 0, Treat_year_instr, 0)
+  ) %>%
   ungroup()
 
+class(grundtvig$Connected_rail)
+class(grundtvig$Connected_rail_instr)
+
+
+# filter years?
+grundtvig <- grundtvig %>% filter(Year < 1930) # max. expansion in 1929, after that start closing down
+
+
+table(grundtvig$Assembly_house)
+
 # Redefine Assembly_house as a dummy
-grundtvig$Assembly_house <- ifelse(grundtvig$Assembly_house >= 1, 1, grundtvig$Assembly_house)
+grundtvig$Assembly_house <- ifelse(grundtvig$Assembly_house > 0, 1, grundtvig$Assembly_house)
 
 
 # Redefine HighSchool as a dummy
-grundtvig$HighSchool <- ifelse(grundtvig$HighSchool >= 1, 1, grundtvig$HighSchool)
+grundtvig$HighSchool <- ifelse(grundtvig$HighSchool > 0, 1, grundtvig$HighSchool)
 
 
 # === Delete duplicates Grundtvig ===
@@ -265,6 +271,10 @@ grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 5)
 ####################################################################################################
 census_iv <- census_iv %>% filter(Treat_year <= 1880)
 grundtvig_iv <- grundtvig_iv %>% filter(Treat_year <= 1876)
+
+
+table(grundtvig_iv$Treat_year)
+table(census_iv$Treat_year)
 
 #######################
 # === Regressions === #
@@ -1226,6 +1236,8 @@ twfe2_red <- feols(
   data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
+
+
 
 out1 = att_gt(
   yname = "Assembly_house",
