@@ -13,6 +13,24 @@ library(psych) # for summary stats
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
+# ==== Params ====
+xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year"
+# xformula = "1"
+
+# var == "lnPopulation" ~ "log(Population 1850)",
+#       var == "lnpop1801" ~ "log(Population 1801)",	
+#       var == "lnChild_women_ratio" ~ "log(Child-women ratio + 1)",
+#       var == "lnManufacturing" ~ "log(Manufacturing + 1)",
+#       var == "lnNotAgriculture" ~ "log(Not agriculture + 1)",
+#       var == "HISCAM_avg" ~ "HISCAM_avg",
+#       var == "lnMigration" ~ "log(Migration)",
+#       var == "dist_hmb" ~ "Distance to Hamburg",
+#       var == "dist_cph" ~ "Distance to Copenhagen",
+#       var == "Boulder_clay_pct" ~ "Boulder clay (%)",
+#       var == "area_parish" ~ "Area of parish",
+#       var == "DistOxRoad" ~ "Distance to Oxroad",
+#       var == "Distance_market_town" ~ "Distance to market town",
+
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
@@ -41,7 +59,26 @@ census = census %>%
     
     # Convert Year and GIS_ID for subsequent operations
     Year_num = as.numeric(as.character(Year)),
-    GIS_ID_num = as.numeric(factor(GIS_ID))
+    GIS_ID_num = as.numeric(factor(GIS_ID)),
+    
+  ) %>%
+  ungroup() %>%
+  mutate(
+    # Cut Boulder_clay_pct into quantiles
+    Boulder_clay_decile = cut(Boulder_clay_pct, breaks = unique(quantile(Boulder_clay_pct, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Boulder_clay_pct_year = paste(Boulder_clay_decile, Year, sep = "_"),
+
+    # Cut Dist_hamb into quantiles
+    Dist_hamb_decile = cut(dist_hmb, breaks = unique(quantile(dist_hmb, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_hamb_year = paste(Dist_hamb_decile, Year, sep = "_"),
+
+    # Cut pop 1801 into quantiles
+    Pop1801_decile = cut(Pop1801, breaks = unique(quantile(Pop1801, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Pop1801_year = paste(Pop1801_decile, Year, sep = "_"),
+
+    # Area parish
+    area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    area_parish_year = paste(area_decile, Year, sep = "_")
   )
 
 # Create Treat_year variable
@@ -383,38 +420,45 @@ grundtvig_cs %>% distinct(Treat_year)
 #######################
 
 # ==== TWFE regressions (Census data) ====
+
+form1 = as.formula(paste("lnPopulation ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe1 = feols(
-  lnPopulation ~ RailAccess | GIS_ID + Year,
+  form1,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form2 = as.formula(paste("lnChild_women_ratio ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe2 = feols(
-  lnChild_women_ratio ~ RailAccess | GIS_ID + Year,
+  form2,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form3 = as.formula(paste("lnManufacturing ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe3 = feols(
-  lnManufacturing ~ RailAccess | GIS_ID + Year,
+  form3,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form4 = as.formula(paste("lnNotAgriculture ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe4 = feols(
-  lnNotAgriculture ~ RailAccess | GIS_ID + Year,
+  form4,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form5 = as.formula(paste("HISCAM_avg ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe5 = feols(
-  HISCAM_avg ~ RailAccess | GIS_ID + Year,
+  form5,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form6 = as.formula(paste("lnMigration ~ RailAccess |", xformula, "+ GIS_ID + Year"))
 twfe6 = feols(
-  lnMigration ~ RailAccess | GIS_ID + Year,
+  form6,
   data = census,
   cluster = ~ GIS_ID
 )
@@ -440,7 +484,7 @@ cs_mod1 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year",       # First year of treatment
-  xformla = ~1,               # No covariates 
+  xformla = as.formula(paste("~", xformula)),  # Any covariates 
   data = census,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
