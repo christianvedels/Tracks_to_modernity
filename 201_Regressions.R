@@ -101,19 +101,11 @@ grundtvig <- grundtvig %>%
   ) %>%
   ungroup()
 
-class(grundtvig$Connected_rail)
-class(grundtvig$Connected_rail_instr)
-
-
 # filter years?
 grundtvig <- grundtvig %>% filter(Year < 1930) # max. expansion in 1929, after that start closing down
 
-
-table(grundtvig$Assembly_house)
-
 # Redefine Assembly_house as a dummy
 grundtvig$Assembly_house <- ifelse(grundtvig$Assembly_house > 0, 1, grundtvig$Assembly_house)
-
 
 # Redefine HighSchool as a dummy
 grundtvig$HighSchool <- ifelse(grundtvig$HighSchool > 0, 1, grundtvig$HighSchool)
@@ -262,17 +254,26 @@ distance_to_nodes <- distance_to_nodes %>%
 census <- left_join(census, distance_to_nodes, by = "GIS_ID")
 grundtvig <- left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
-# filter 10 km
+# filter 5 km
 census_iv <- census %>% filter(min_distance_to_node_km > 5)
 grundtvig_iv <- grundtvig %>% filter(min_distance_to_node_km > 5)
 
 ####################################################################################################
 # === Filter out parishes that gain access after 1876 (1880), because we dont instrument these === #
 ####################################################################################################
+rail_panel <- read.csv2("Data/Panel_of_railways_in_parishes.csv")
+
+later_connected_GIS_ID <- rail_panel %>% 
+  filter(Year > 1876) %>%
+  filter(Connected_rail == 1) %>%
+  select(GIS_ID) %>%
+  unlist()
+  
+
 census_iv <- census_iv %>% filter(Treat_year <= 1880)
 grundtvig_iv <- grundtvig_iv %>% filter(Treat_year <= 1876)
 
-
+table(census$Treat_year)
 table(grundtvig_iv$Treat_year)
 table(census_iv$Treat_year)
 
