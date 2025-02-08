@@ -119,7 +119,38 @@ grundtvig = grundtvig %>%
   mutate(
     Year_num   = as.numeric(as.character(Year)),
     GIS_ID_num = as.numeric(factor(GIS_ID))
+  ) %>%
+  ungroup() %>%
+  mutate(
+    # Cut Boulder_clay_pct into quantiles
+    Boulder_clay_decile = cut(Boulder_clay_pct, breaks = unique(quantile(Boulder_clay_pct, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Boulder_clay_pct_year = paste(Boulder_clay_decile, Year, sep = "_"),
+    
+    # Cut Dist_hamb into quantiles
+    Dist_hamb_decile = cut(dist_hmb, breaks = unique(quantile(dist_hmb, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_hamb_year = paste(Dist_hamb_decile, Year, sep = "_"),
+    
+    # Cut Dist_cph into quantiles
+    Dist_cph_decile = cut(dist_cph, breaks = unique(quantile(dist_cph, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_cph_year = paste(Dist_cph_decile, Year, sep = "_"),
+    
+    # Cut Dist_cph into quantiles
+    Dist_ox_decile = cut(DistOxRoad, breaks = unique(quantile(DistOxRoad, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_ox_year = paste(Dist_ox_decile, Year, sep = "_"),
+    
+    # Cut Dist_mt into quantiles
+    Dist_mt_decile = cut(Distance_market_town, breaks = unique(quantile(Distance_market_town, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Dist_mt_year = paste(Dist_mt_decile, Year, sep = "_"),
+    
+    # Cut pop 1801 into quantiles
+    Pop1801_decile = cut(Pop1801, breaks = unique(quantile(Pop1801, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    Pop1801_year = paste(Pop1801_decile, Year, sep = "_"),
+    
+    # Area parish
+    area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
+    area_parish_year = paste(area_decile, Year, sep = "_")
   )
+
 
 # Create Treat_year variable
 grundtvig = grundtvig %>%
@@ -419,42 +450,42 @@ grundtvig_cs %>% distinct(Treat_year)
 
 # ==== TWFE regressions (Census data) ====
 
-form1 = as.formula(paste("lnPopulation ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form1 = as.formula(paste("lnPopulation ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe1 = feols(
   form1,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form2 = as.formula(paste("lnChild_women_ratio ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form2 = as.formula(paste("lnChild_women_ratio ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe2 = feols(
   form2,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form3 = as.formula(paste("lnManufacturing ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form3 = as.formula(paste("lnManufacturing ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe3 = feols(
   form3,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form4 = as.formula(paste("lnNotAgriculture ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form4 = as.formula(paste("lnNotAgriculture ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe4 = feols(
   form4,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form5 = as.formula(paste("HISCAM_avg ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form5 = as.formula(paste("HISCAM_avg ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe5 = feols(
   form5,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form6 = as.formula(paste("lnMigration ~ RailAccess |", xformula, "+ GIS_ID + Year"))
+form6 = as.formula(paste("lnMigration ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe6 = feols(
   form6,
   data = census,
@@ -619,12 +650,12 @@ outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe)), outcomes_t
 
 
 twfe_coef <- c("RailAccess", 
-               sprintf("%.3f", twfe1$coefficients),
-               sprintf("%.3f", twfe2$coefficients), 
-               sprintf("%.3f", twfe3$coefficients), 
-               sprintf("%.3f", twfe4$coefficients), 
-               sprintf("%.3f", twfe5$coefficients), 
-               sprintf("%.3f", twfe6$coefficients))
+               sprintf("%.3f", twfe1$coefficients[1]),
+               sprintf("%.3f", twfe2$coefficients[1]), 
+               sprintf("%.3f", twfe3$coefficients[1]), 
+               sprintf("%.3f", twfe4$coefficients[1]), 
+               sprintf("%.3f", twfe5$coefficients[1]), 
+               sprintf("%.3f", twfe6$coefficients[1]))
 
 # Add ***
 twfe_coef[2:7] <- sapply(2:7, function(i) {
@@ -648,12 +679,12 @@ twfe_coef[2:7] <- sapply(2:7, function(i) {
 
 # built output table row by row
 twfe_se <- c("", 
-             sprintf("(%.3f)", twfe1$se),
-             sprintf("(%.3f)", twfe2$se), 
-             sprintf("(%.3f)", twfe3$se),
-             sprintf("(%.3f)", twfe4$se),
-             sprintf("(%.3f)", twfe5$se),
-             sprintf("(%.3f)", twfe6$se))
+             sprintf("(%.3f)", twfe1$se[1]),
+             sprintf("(%.3f)", twfe2$se[1]), 
+             sprintf("(%.3f)", twfe3$se[1]),
+             sprintf("(%.3f)", twfe4$se[1]),
+             sprintf("(%.3f)", twfe5$se[1]),
+             sprintf("(%.3f)", twfe6$se[1]))
 
 parish_fe <- c("Parish FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 
@@ -751,53 +782,48 @@ kbl(results,
 ##########################################
 
 # ==== TSLS regressions (Census data) ====
+form1 <- as.formula(paste("lnPopulation ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls1 = feols(
-  lnPopulation ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form1,  # Full formula including covariates, fixed effects, and IV
   data = census,
-  cluster = ~ GIS_ID
+  cluster = ~ GIS_ID  # Clustering
 )
 
+form2 <- as.formula(paste("lnChild_women_ratio ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls2 = feols(
-  lnChild_women_ratio ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form2,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form3 <- as.formula(paste("lnManufacturing ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls3 = feols(
-  lnManufacturing ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form3,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form4 <- as.formula(paste("lnNotAgriculture ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls4 = feols(
-  lnNotAgriculture ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form4,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form5 <- as.formula(paste("HISCAM_avg ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls5 = feols(
-  HISCAM_avg ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form5,
   data = census,
   cluster = ~ GIS_ID
 )
 
+form6 <- as.formula(paste("lnMigration ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls6 = feols(
-  lnMigration ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
+  form6,
   data = census,
   cluster = ~ GIS_ID
 )
+summary(tsls6)
 
 # first stages
 etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]], tsls3$iv_first_stage[[1]],
@@ -805,44 +831,70 @@ etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]], tsls3$iv_first_stag
        tex = TRUE,
        title = "First-Stage Estimates (With Nodes)")
 
-# second stage
+
+# Define the controls row dynamically
+controls <- if (xformula == 1) {
+  rep("No", 6)  # If xformula is 1, set all models to "No"
+} else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") {
+  rep("Yes", 6)  # If xformula matches the specified string, set all to "Yes"
+} else {
+  rep("Mixed", 6)  # Default case if xformula does not match the predefined conditions
+}
+
+# second stages output table
 etable(
-  list(tsls1, tsls2, tsls3, tsls4, tsls5, tsls6)
+  list(tsls1, tsls2, tsls3, tsls4, tsls5, tsls6),
+  signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
+  fitstat = ~ n + ivf,
+  tex = T,
+  digits = 3,
+  keep = "RailAccess",
+  title = "Railways and local development (TSLS estimates)",
+  extralines = list(
+    "__Controls" = controls
+  )
 )
 
-# Reduced form TWFE with Instrument
+
+# === Reduced form TWFE with Instrument ===
+form1 = as.formula(paste("lnPopulation ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe1_red = feols(
-  lnPopulation ~ LCPAccess | GIS_ID + Year,
+  form1,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
+form2 = as.formula(paste("lnChild_women_ratio ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe2_red = feols(
-  lnChild_women_ratio ~ LCPAccess | GIS_ID + Year,
+  form2,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
+form3 = as.formula(paste("lnManufacturing ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe3_red = feols(
-  lnManufacturing ~ LCPAccess | GIS_ID + Year,
+  form3,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
+form4 = as.formula(paste("lnNotAgriculture ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe4_red = feols(
-  lnNotAgriculture ~ LCPAccess | GIS_ID + Year,
+  form4,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
+form5 = as.formula(paste("HISCAM_avg ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe5_red = feols(
-  HISCAM_avg ~ LCPAccess | GIS_ID + Year,
+  form5,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
+form6 = as.formula(paste("lnMigration ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe6_red = feols(
-  lnMigration ~ LCPAccess | GIS_ID + Year,
+  form6,
   data = census_cs,
   cluster = ~ GIS_ID
 )
@@ -859,7 +911,7 @@ cs_mod1 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
-  xformla = ~1,               # No covariates 
+  xformla = as.formula(paste("~", xformula)),              # No covariates 
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -870,7 +922,7 @@ cs_mod2 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -881,7 +933,7 @@ cs_mod3 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -892,7 +944,7 @@ cs_mod4 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -903,7 +955,7 @@ cs_mod5 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),             # No covariates (consistent with TWFE)
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
@@ -914,18 +966,18 @@ cs_mod6 <- att_gt(
   tname = "Year_num",             # Time variable
   idname = "GIS_ID_num",          # Unit identifier
   gname = "Treat_year_instr",       # First (observed) year of treatment
-  xformla = ~1,               # No covariates (consistent with TWFE)
+  xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
   data = census_cs,              # Your dataset
   clustervars = "GIS_ID"      # Cluster variable
 )
 
 # Aggregate the ATT
-agg_mod1 <- aggte(cs_mod1, type = "simple")
-agg_mod2 <- aggte(cs_mod2, type = "simple")
-agg_mod3 <- aggte(cs_mod3, type = "simple")
-agg_mod4 <- aggte(cs_mod4, type = "simple")
-agg_mod5 <- aggte(cs_mod5, type = "simple")
-agg_mod6 <- aggte(cs_mod6, type = "simple")
+agg_mod1 <- aggte(cs_mod1, type = "simple", na.rm = T)
+agg_mod2 <- aggte(cs_mod2, type = "simple", na.rm = T)
+agg_mod3 <- aggte(cs_mod3, type = "simple", na.rm = T)
+agg_mod4 <- aggte(cs_mod4, type = "simple", na.rm = T)
+agg_mod5 <- aggte(cs_mod5, type = "simple", na.rm = T)
+agg_mod6 <- aggte(cs_mod6, type = "simple", na.rm = T)
 
 # Summary
 summary(agg_mod1) # Pop
@@ -1001,12 +1053,12 @@ outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe_reduced)), ou
 
 
 twfe_iv_coef <- c("fit_RailAccess", 
-                  sprintf("%.3f", tsls1$coefficients),
-                  sprintf("%.3f", tsls2$coefficients),
-                  sprintf("%.3f", tsls3$coefficients),
-                  sprintf("%.3f", tsls4$coefficients),
-                  sprintf("%.3f", tsls5$coefficients),
-                  sprintf("%.3f", tsls6$coefficients))
+                  sprintf("%.3f", tsls1$coefficients[1]),
+                  sprintf("%.3f", tsls2$coefficients[1]),
+                  sprintf("%.3f", tsls3$coefficients[1]),
+                  sprintf("%.3f", tsls4$coefficients[1]),
+                  sprintf("%.3f", tsls5$coefficients[1]),
+                  sprintf("%.3f", tsls6$coefficients[1]))
 
 # Add ***
 twfe_iv_coef[2:7] <- sapply(2:7, function(i) {
@@ -1029,23 +1081,23 @@ twfe_iv_coef[2:7] <- sapply(2:7, function(i) {
 
 # built output table row by row
 twfe_iv_se <- c("", 
-                sprintf("(%.3f)", tsls1$se),
-                sprintf("(%.3f)", tsls2$se),
-                sprintf("(%.3f)", tsls3$se),
-                sprintf("(%.3f)", tsls4$se),
-                sprintf("(%.3f)", tsls5$se),
-                sprintf("(%.3f)", tsls6$se))
+                sprintf("(%.3f)", tsls1$se[1]),
+                sprintf("(%.3f)", tsls2$se[1]),
+                sprintf("(%.3f)", tsls3$se[1]),
+                sprintf("(%.3f)", tsls4$se[1]),
+                sprintf("(%.3f)", tsls5$se[1]),
+                sprintf("(%.3f)", tsls6$se[1]))
 
 parish_fe <- c("Parish FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 year_fe <- c("Year FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 
 twfe_red_coef <- c("LCPAccess", 
-                   sprintf("%.3f", twfe1_red$coefficients),
-                   sprintf("%.3f", twfe2_red$coefficients),
-                   sprintf("%.3f", twfe3_red$coefficients),
-                   sprintf("%.3f", twfe4_red$coefficients),
-                   sprintf("%.3f", twfe5_red$coefficients),
-                   sprintf("%.3f", twfe6_red$coefficients))
+                   sprintf("%.3f", twfe1_red$coefficients[1]),
+                   sprintf("%.3f", twfe2_red$coefficients[1]),
+                   sprintf("%.3f", twfe3_red$coefficients[1]),
+                   sprintf("%.3f", twfe4_red$coefficients[1]),
+                   sprintf("%.3f", twfe5_red$coefficients[1]),
+                   sprintf("%.3f", twfe6_red$coefficients[1]))
 
 # Add ***
 twfe_red_coef[2:7] <- sapply(2:7, function(i) {
@@ -1068,12 +1120,12 @@ twfe_red_coef[2:7] <- sapply(2:7, function(i) {
 
 # SE's
 twfe_red_se <- c("", 
-                 sprintf("(%.3f)", twfe1_red$se),
-                 sprintf("(%.3f)", twfe2_red$se),
-                 sprintf("(%.3f)", twfe3_red$se),
-                 sprintf("(%.3f)", twfe4_red$se),
-                 sprintf("(%.3f)", twfe5_red$se),
-                 sprintf("(%.3f)", twfe6_red$se))
+                 sprintf("(%.3f)", twfe1_red$se[1]),
+                 sprintf("(%.3f)", twfe2_red$se[1]),
+                 sprintf("(%.3f)", twfe3_red$se[1]),
+                 sprintf("(%.3f)", twfe4_red$se[1]),
+                 sprintf("(%.3f)", twfe5_red$se[1]),
+                 sprintf("(%.3f)", twfe6_red$se[1]))
 
 # did coeffcicients reduced form
 did_coef_red <- c("LCPAccess", 
@@ -1131,6 +1183,10 @@ mean_outcome <- c(
   sapply(outcomes_twfe_reduced, function(col) sprintf("%.3f", mean(census[[col]], na.rm = TRUE)))
 )
 
+controls <- c("Controls", 
+              if (xformula == 1) rep("No", 6) else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 6))
+
+
 n_parishes <- c("Parishes", 
                 length(unique(agg_mod1$DIDparams$data$GIS_ID)),
                 length(unique(agg_mod2$DIDparams$data$GIS_ID)),
@@ -1139,7 +1195,7 @@ n_parishes <- c("Parishes",
                 length(unique(agg_mod5$DIDparams$data$GIS_ID)),
                 length(unique(agg_mod6$DIDparams$data$GIS_ID)))
 
-nodes_dropped <- c("Nodes dropped (<5km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+nodes_dropped <- c("Nodes dropped (<10km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
   
 # first stage f-statistic
 firstF <- c("F-test (1st stage)", 
@@ -1156,14 +1212,14 @@ firstF <- c("F-test (1st stage)",
 # bind together for output table
 results <- rbind(twfe_iv_coef, twfe_iv_se, parish_fe, year_fe, twfe_iv_obs, firstF,
                  twfe_red_coef, twfe_red_se, parish_fe, year_fe, twfe_reduced_obs,
-                 did_coef_red, did_se_red, n_parishes, did_reduced_obs, mean_outcome, nodes_dropped)
+                 did_coef_red, did_se_red, n_parishes, did_reduced_obs, mean_outcome, nodes_dropped, controls)
 
 colnames(results) <- c(" ", "(1)", "(2)", "(3)", "(4)", "(5)", "(6)")
 
 # Create Output latex table
 kbl(results, 
     booktabs = T, 
-    caption = "TSLS: Railways and Local Development", 
+    caption = "TSLS vs Reduced form: Railways and Local Development", 
     row.names = F,
     align = "lcccccc",
     linesep = "",  # Suppress additional line spacing
@@ -1173,31 +1229,26 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 6), escape = F) %>%
-  # group_rows("Panel A: 2SLS", 1, 6) %>%
-  # group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
-  # group_rows("Panel C: CS Reduced Form", 12, 15) %>%
-  # footnote(
-  #   general = "Notes: This table...",
-  #   number = c("Clustered (Parish) Standard errors in parentheses."),
-  #   symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-  #   threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-  #   escape = FALSE          # Allows LaTeX symbols in the notes
-  # )
-  print()
+  group_rows("Panel A: 2SLS", 1, 6) %>%
+  group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
+  group_rows("Panel C: CS Reduced Form", 12, 15)
 
 ######################
 # ==== Grundtvig === #
 ######################
 
+
 # TWFE
+form1 = as.formula(paste("Assembly_house ~ RailAccess +", xformula, "| GIS_ID + Year"))
 mod1 = feols(
-  Assembly_house ~ RailAccess | GIS_ID + Year,
+  form1,
   data = grundtvig,
   cluster = ~ GIS_ID
 )
 
+form2 = as.formula(paste("HighSchool ~ RailAccess +", xformula, "| GIS_ID + Year"))
 mod2 = feols(
-  HighSchool ~ RailAccess | GIS_ID + Year,
+  form2,
   data = grundtvig,
   cluster = ~ GIS_ID
 )
@@ -1207,26 +1258,29 @@ etable(mod1, mod2)
 
 # ==== Doubly Robust DID: Grundtvig ====
 
-# No covariates
+# Assembly house
 out1 = att_gt(
   yname = "Assembly_house",
   tname = "Year_num",
   gname = "Treat_year",
   idname = "GIS_ID_num",
+  xformla = as.formula(paste("~", xformula)),
   data = grundtvig,
 )
 
+# Folk high school
 out2 = att_gt(
   yname = "HighSchool",
   tname = "Year_num",
   gname = "Treat_year",
   idname = "GIS_ID_num",
+  xformla = as.formula(paste("~", xformula)),
   data = grundtvig,
 )
 
 # Aggregate the ATT
-agg_mod1 <- aggte(out1, type = "simple")
-agg_mod2 <- aggte(out2, type = "simple")
+agg_mod1 <- aggte(out1, type = "simple", na.rm = T)
+agg_mod2 <- aggte(out2, type = "simple", na.rm = T)
 
 # Summary
 summary(agg_mod1)
@@ -1276,7 +1330,9 @@ outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe)), outcomes_t
 # Built output table row by row
 
 # TWFE Coefficients
-twfe_coef <- c("RailAccess", sprintf("%.3f", mod1$coefficients), sprintf("%.3f", mod2$coefficients))
+twfe_coef <- c("RailAccess", 
+               sprintf("%.3f", mod1$coefficients[1]),
+               sprintf("%.3f", mod2$coefficients[1]))
 
 # Add ***
 twfe_coef[2:3] <- sapply(2:3, function(i) {
@@ -1298,7 +1354,9 @@ twfe_coef[2:3] <- sapply(2:3, function(i) {
 })
 
 # TWFE SEs
-twfe_se <- c("", sprintf("(%.3f)", mod1$se), sprintf("(%.3f)",mod2$se))
+twfe_se <- c("", 
+             sprintf("(%.3f)", mod1$se[1]),
+             sprintf("(%.3f)", mod2$se[1]))
 
 # Fixed Effects
 parish_fe <- c("Parish FE", "Yes", "Yes")
@@ -1311,7 +1369,9 @@ did_obs <- c("Obs.",
              agg_mod2$DIDparams$n * agg_mod1$DIDparams$nT)
 
 # CS DiD coefficient
-did_coef <- c("RailAccess", sprintf("%.3f",agg_mod1$overall.att), sprintf("%.3f",agg_mod2$overall.att))
+did_coef <- c("RailAccess", 
+              sprintf("%.3f", agg_mod1$overall.att),
+              sprintf("%.3f", agg_mod2$overall.att))
 
 # Add significance stars to DID coefficients based on p-values
 did_coef[2:3] <- sapply(2:3, function(i) {
@@ -1333,7 +1393,9 @@ did_coef[2:3] <- sapply(2:3, function(i) {
 })
 
 
-did_se <- c("", sprintf("(%.3f)", agg_mod1$overall.se), sprintf("(%.3f)", agg_mod2$overall.se))
+did_se <- c("", 
+            sprintf("(%.3f)", agg_mod1$overall.se),
+            sprintf("(%.3f)", agg_mod2$overall.se))
 
 
 # Create mean Outcome
@@ -1345,10 +1407,13 @@ mean_outcome <- c(
 # #Parishes
 did_n_parishes <- c("Parishes", length(unique(agg_mod1$DIDparams$data$GIS_ID)), length(unique(agg_mod2$DIDparams$data$GIS_ID)))
 
-# bind together for output table
+controls <- c("Controls", 
+              if (xformula == 1) rep("No", 2) 
+              else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 2))
+
 
 # bind together
-results <- rbind(twfe_coef, twfe_se, parish_fe, year_fe, twfe_obs, did_coef, did_se, did_n_parishes, did_obs, mean_outcome)
+results <- rbind(twfe_coef, twfe_se, parish_fe, year_fe, twfe_obs, did_coef, did_se, did_n_parishes, did_obs, mean_outcome, controls)
 colnames(results) <- c(" ", "(1)", "(2)")
 
 # Create Output latex table
@@ -1364,15 +1429,8 @@ kbl(results,
   ) %>%
   add_header_above(outcomes_header) %>%
   add_header_above(c(" " = 1, "Dependent variable:" = 2), escape = F) %>%
-  # group_rows("Panel A: TWFE", 1, 5) %>%
-  # group_rows("Panel B: Callaway and Sant'Anna", 6, 9) %>% 
-  footnote(
-    general = "Notes: This table...",
-    number = c("Clustered (Parish) Standard errors in parentheses."),
-    symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-    threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-    escape = FALSE          # Allows LaTeX symbols in the notes
-  )
+  group_rows("Panel A: TWFE", 1, 5) %>%
+  group_rows("Panel B: Callaway and Sant'Anna", 6, 9)
 
 # With Instrument ##########################################################################
 
