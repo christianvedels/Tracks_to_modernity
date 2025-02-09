@@ -14,8 +14,8 @@ library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
-#xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
-xformula = "1"
+xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
+#xformula = "1"
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
@@ -369,9 +369,9 @@ p1 = grundtvig %>%
 p1
 ggsave("Plots/Grundtvig_over_time.png", p1, width = 0.75*dims$width, height = 1.5*dims$height)
 
-###############################
-# === Filter out IV nodes === #
-###############################
+#################################
+# === Add distance to nodes === #
+#################################
 
 # load nodes_distance data
 distance_to_nodes = read_excel("Data/distance_to_nodes.xlsx")
@@ -385,9 +385,9 @@ distance_to_nodes = distance_to_nodes %>%
 census = left_join(census, distance_to_nodes, by = "GIS_ID")
 grundtvig = left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
-####################################################################################################
-# === Filter for parishes that are connected later === #
-####################################################################################################
+############################################################################
+# === Add variable for invalid comparisons (i.e. connected after 1876) === #
+############################################################################
 later_connected_GIS_ID = rail_panel %>% 
   filter(Year > 1876) %>%
   filter(Year < 1920) %>%
@@ -429,27 +429,29 @@ invalid_comparison = data.frame(
 census = left_join(census, invalid_comparison, by = "GIS_ID")
 grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
 
-census %>% distinct(Treat_year)
-grundtvig %>% distinct(Treat_year)
-
+# create census cs
 census_cs = census %>% 
   filter(invalid_comparison == 0) %>%
   filter(away_from_node == 1)
 
+# create grundtvig_cs
 grundtvig_cs = grundtvig %>%
   filter(invalid_comparison == 0) %>%
   filter(away_from_node == 1)
 
-census_cs %>% distinct(Treat_year)
-grundtvig_cs %>% distinct(Treat_year)
+# create census iv
+census_iv = census %>% 
+  filter(away_from_node == 1)
 
+# create grundtvig_iv
+grundtvig_iv = grundtvig %>%
+  filter(away_from_node == 1)
 
 #######################
 # === Regressions === #
 #######################
 
 # ==== TWFE regressions (Census data) ====
-
 form1 = as.formula(paste("lnPopulation ~ RailAccess +", xformula, "| GIS_ID + Year"))
 twfe1 = feols(
   form1,
@@ -785,52 +787,44 @@ kbl(results,
 form1 <- as.formula(paste("lnPopulation ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls1 = feols(
   form1,  # Full formula including covariates, fixed effects, and IV
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID  # Clustering
 )
 
 form2 <- as.formula(paste("lnChild_women_ratio ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls2 = feols(
   form2,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 form3 <- as.formula(paste("lnManufacturing ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls3 = feols(
   form3,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 form4 <- as.formula(paste("lnNotAgriculture ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls4 = feols(
   form4,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 form5 <- as.formula(paste("HISCAM_avg ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls5 = feols(
   form5,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
 
 form6 <- as.formula(paste("lnMigration ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls6 = feols(
   form6,
-  data = census,
+  data = census_iv,
   cluster = ~ GIS_ID
 )
-summary(tsls6)
-
-# first stages
-etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]], tsls3$iv_first_stage[[1]],
-       tsls4$iv_first_stage[[1]], tsls5$iv_first_stage[[1]], tsls6$iv_first_stage[[1]],
-       tex = TRUE,
-       title = "First-Stage Estimates (With Nodes)")
-
 
 # Define the controls row dynamically
 controls <- if (xformula == 1) {
@@ -840,6 +834,8 @@ controls <- if (xformula == 1) {
 } else {
   rep("Mixed", 6)  # Default case if xformula does not match the predefined conditions
 }
+
+nodes_dropped <- rep("Yes", 6)
 
 # second stages output table
 etable(
@@ -851,6 +847,7 @@ etable(
   keep = "RailAccess",
   title = "Railways and local development (TSLS estimates)",
   extralines = list(
+    "__Nodes dropped (10km)" = nodes_dropped,
     "__Controls" = controls
   )
 )
@@ -1184,7 +1181,8 @@ mean_outcome <- c(
 )
 
 controls <- c("Controls", 
-              if (xformula == 1) rep("No", 6) else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 6))
+              if (xformula == 1) rep("No", 6) 
+              else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 6))
 
 
 n_parishes <- c("Parishes", 
@@ -1195,7 +1193,7 @@ n_parishes <- c("Parishes",
                 length(unique(agg_mod5$DIDparams$data$GIS_ID)),
                 length(unique(agg_mod6$DIDparams$data$GIS_ID)))
 
-nodes_dropped <- c("Nodes dropped (<10km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
+nodes_dropped <- c("Nodes dropped (10km)", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
   
 # first stage f-statistic
 firstF <- c("F-test (1st stage)", 
@@ -1206,8 +1204,6 @@ firstF <- c("F-test (1st stage)",
             round(as.numeric(fitstat(tsls5, "ivf")$ivf[1]), 2),
             round(as.numeric(fitstat(tsls6, "ivf")$ivf[1]), 2)
             )
-
-
 
 # bind together for output table
 results <- rbind(twfe_iv_coef, twfe_iv_se, parish_fe, year_fe, twfe_iv_obs, firstF,
@@ -1233,6 +1229,67 @@ kbl(results,
   group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
   group_rows("Panel C: CS Reduced Form", 12, 15)
 
+#############################
+# === First-stage table === #
+#############################
+first1 = feols(
+  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = census,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first2 = feols(
+  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = census_iv,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first3 = feols(
+  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = census_cs,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+# now same with covariats
+
+first4 = feols(
+  lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = census,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first5 = feols(
+  lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = census_iv,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first6 = feols(
+  lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = census_cs,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+# create table
+etable(first1, first2, first3, first4, first5, first6,
+       keep = "LCPAccess",
+       stage = 1,
+       tex = T,
+       signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
+       fitstat = ~ n + ivf,
+       extralines = list(
+         "__Nodes dropped (10km)" = c("No", "Yes", "Yes", "No", "Yes", "Yes"),
+         "__Controls" = c("No", "No", "No", "Yes", "Yes", "Yes"),
+         "__Invalid comparisons dropped" = c("No", "No", "Yes", "No", "No", "Yes")
+       ))
+
+
 ######################
 # ==== Grundtvig === #
 ######################
@@ -1254,7 +1311,8 @@ mod2 = feols(
 )
 
 # View results
-etable(mod1, mod2)
+etable(mod1, mod2,
+       keep = "RailAccess")
 
 # ==== Doubly Robust DID: Grundtvig ====
 
@@ -1287,10 +1345,10 @@ summary(agg_mod1)
 summary(agg_mod2)
 
 # Dynamic summary
-agg_mod1_dyn = aggte(out1, type = "dynamic")
-agg_mod2_dyn = aggte(out2, type = "dynamic")
-agg_mod1_dyn %>% ggdid()
-agg_mod2_dyn %>% ggdid()
+#agg_mod1_dyn = aggte(out1, type = "dynamic")
+#agg_mod2_dyn = aggte(out2, type = "dynamic")
+#agg_mod1_dyn %>% ggdid()
+#agg_mod2_dyn %>% ggdid()
 
 # === Create Latex output table ===
 
@@ -1434,53 +1492,70 @@ kbl(results,
 
 # With Instrument ##########################################################################
 
+# ==== TSLS regressions (Census data) ====
+form1 <- as.formula(paste("Assembly_house ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls1 = feols(
-  Assembly_house ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
-  data = grundtvig,
+  form1,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
+form2 <- as.formula(paste("HighSchool ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
 tsls2 = feols(
-  HighSchool ~ 1 
-  | GIS_ID + Year 
-  | RailAccess ~ LCPAccess,
-  data = grundtvig,
+  form2,
+  data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
-# first stages
-etable(tsls1$iv_first_stage[[1]], tsls2$iv_first_stage[[1]],
-       tex = TRUE,
-       title = "First-Stage Estimates (With Nodes)")
+# Define the controls row dynamically
+controls <- if (xformula == 1) {
+  rep("No", 2)  # If xformula is 1, set all models to "No"
+} else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") {
+  rep("Yes", 2)  # If xformula matches the specified string, set all to "Yes"
+} else {
+  rep("?", 2)  # Default case if xformula does not match the predefined conditions
+}
 
-# second stage
-etable(tsls1, tsls2,
-       tex = TRUE,
-       title = "First-Stage Estimates (With Nodes)")
+nodes_dropped <- rep("Yes", 2)
 
+# second stages output table
+etable(
+  list(tsls1, tsls2),
+  signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
+  fitstat = ~ n + ivf,
+  tex = T,
+  digits = 3,
+  keep = "RailAccess",
+  title = "Railways and Grundtvigianism (TSLS estimates)",
+  extralines = list(
+    "__Nodes dropped (10km)" = nodes_dropped,
+    "__Controls" = controls
+  )
+)
+
+#####
+
+# REDUCED FORM
+form1 = as.formula(paste("Assembly_house ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe1_red <- feols(
-  Assembly_house ~ LCPAccess 
-  | GIS_ID + Year,
+  form1,
   data = grundtvig_cs,
   cluster = ~ GIS_ID
 )
 
+form2 = as.formula(paste("HighSchool ~ LCPAccess +", xformula, "| GIS_ID + Year"))
 twfe2_red <- feols(
-  HighSchool ~ LCPAccess 
-  | GIS_ID + Year,
+  form2,
   data = grundtvig_cs,
   cluster = ~ GIS_ID
 )
-
-
 
 out1 = att_gt(
   yname = "Assembly_house",
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
+  xformla = as.formula(paste("~", xformula)),
   data = grundtvig_cs,
 )
 
@@ -1489,11 +1564,12 @@ out2 = att_gt(
   tname = "Year_num",
   gname = "Treat_year_instr",
   idname = "GIS_ID_num",
+  xformla = as.formula(paste("~", xformula)),
   data = grundtvig_cs,
 )
 
 # Aggregate the ATT
-agg_mod1 <- aggte(out1, type = "simple", na.rm = T)
+agg_mod1 <- aggte(out1, type = "simple", na.rm = T) # When using covariats: Fehler in max(t) : ungültiger 'type' (list) des Argumentes
 agg_mod2 <- aggte(out2, type = "simple", na.rm = T)
 
 # Summary
@@ -1552,7 +1628,8 @@ if (!identical(outcomes_twfe_reduced, outcomes_cs_reduced) ||
 outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe_reduced)), outcomes_twfe_reduced))
 
 # coefficients
-twfe_iv_coef <- c("fit_RailAccess", sprintf("%.3f", tsls1$coefficients), sprintf("%.3f", tsls2$coefficients))
+twfe_iv_coef <- c("fit_RailAccess", 
+                  sprintf("%.3f", tsls1$coefficients[1]), sprintf("%.3f", tsls2$coefficients[1]))
 
 # Add ***
 twfe_iv_coef[2:3] <- sapply(2:3, function(i) {
@@ -1574,11 +1651,16 @@ twfe_iv_coef[2:3] <- sapply(2:3, function(i) {
 })
 
 # built output table row by row
-twfe_iv_se <- c("", sprintf("(%.3f)", tsls1$se), sprintf("(%.3f)",tsls2$se))
+twfe_iv_se <- c("", 
+                sprintf("(%.3f)", tsls1$se[1]), 
+                sprintf("(%.3f)", tsls2$se[1]))
+
 parish_fe <- c("Parish FE", "Yes", "Yes")
 year_fe <- c("Year FE", "Yes", "Yes")
 
-twfe_red_coef <- c("LCPAccess", sprintf("%.3f", twfe1_red$coefficients), sprintf("%.3f", twfe2_red$coefficients))
+twfe_red_coef <- c("LCPAccess", 
+                   sprintf("%.3f", twfe1_red$coefficients[1]), 
+                   sprintf("%.3f", twfe2_red$coefficients[1]))
 
 # Add ***
 twfe_red_coef[2:3] <- sapply(2:3, function(i) {
@@ -1600,7 +1682,9 @@ twfe_red_coef[2:3] <- sapply(2:3, function(i) {
 })
 
 # SE's
-twfe_red_se <- c("", sprintf("(%.3f)", twfe1_red$se), sprintf("(%.3f)", twfe2_red$se))
+twfe_red_se <- c("", 
+                 sprintf("(%.3f)", twfe1_red$se[1]),
+                 sprintf("(%.3f)", twfe2_red$se[1]))
 
 # did coefficicients reduced form
 did_coef_red <- c("LCPAccess", sprintf("%.3f", agg_mod1$overall.att), sprintf("%.3f",agg_mod2$overall.att))
@@ -1643,16 +1727,22 @@ mean_outcome <- c(
 n_parishes <- c("Parishes", length(unique(agg_mod1$DIDparams$data$GIS_ID)), length(unique(agg_mod2$DIDparams$data$GIS_ID)))
 
 nodes_dropped <- c("Nodes dropped (< 10 km)", "Yes", "Yes")
+
 # first stage f-statistic
 firstF <- c("F-test (1st stage)", 
             round(as.numeric(fitstat(tsls1, "ivf")$ivf[1]), 2),
             round(as.numeric(fitstat(tsls2, "ivf")$ivf[1]), 2)
 )
 
+controls <- c("Controls", 
+              if (xformula == 1) rep("No", 2) 
+              else if (xformula == "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year") rep("Yes", 2))
+
+
 # bind together for output table
 results <- rbind(twfe_iv_coef, twfe_iv_se, parish_fe, year_fe, twfe_iv_obs, firstF,
                  twfe_red_coef, twfe_red_se, parish_fe, year_fe, twfe_reduced_obs,
-                 did_coef_red, did_se_red, n_parishes, did_reduced_obs, mean_outcome, nodes_dropped)
+                 did_coef_red, did_se_red, n_parishes, did_reduced_obs, mean_outcome, nodes_dropped, controls)
 
 colnames(results) <- c(" ", "(1)", "(2)")
 
@@ -1673,16 +1763,68 @@ kbl(results,
   add_header_above(c(" " = 1, "Dependent variable:" = 2), escape = F) %>%
   group_rows("Panel A: 2SLS", 1, 6) %>%
   group_rows("Panel B: TWFE Reduced Form", 7, 11) %>%
-  group_rows("Panel C: CS Reduced Form", 12, 15) %>%
-  footnote(
-    general = "Notes: This table...",
-    number = c("Clustered (Parish) Standard errors in parentheses."),
-    symbol = c("Significance levels: * p<0.10, ** p<0.05, *** p<0.01"),
-    threeparttable = TRUE, # Ensures LaTeX handles the footnotes correctly
-    escape = FALSE          # Allows LaTeX symbols in the notes
-  )
+  group_rows("Panel C: CS Reduced Form", 12, 15) 
 
+#######################################
+# === First stage table Grundtvig === #
+#######################################
 
+first1 = feols(
+  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = grundtvig,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first2 = feols(
+  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = grundtvig_iv,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first3 = feols(
+  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  data = grundtvig_cs,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+# now same with covariats
+
+first4 = feols(
+  Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = grundtvig,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first5 = feols(
+  Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = grundtvig_iv,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+first6 = feols(
+  Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
+  | GIS_ID + Year 
+  | RailAccess ~ LCPAccess, 
+  data = grundtvig_cs,
+  cluster = ~ GIS_ID  # Clustering
+)
+
+# create table
+etable(first1, first2, first3, first4, first5, first6,
+       keep = "LCPAccess",
+       stage = 1,
+       tex = T,
+       signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
+       fitstat = ~ n + ivf,
+       extralines = list(
+         "__Nodes dropped (10km)" = c("No", "Yes", "Yes", "No", "Yes", "Yes"),
+         "__Controls" = c("No", "No", "No", "Yes", "Yes", "Yes"),
+         "__Invalid comparisons dropped" = c("No", "No", "Yes", "No", "No", "Yes")
+       ))
 
 
 
