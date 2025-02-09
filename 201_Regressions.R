@@ -199,9 +199,6 @@ census_distributions = function(){
       dist_hmb,
       dist_cph,
       Boulder_clay_pct,
-      area_parish, 
-      DistOxRoad,
-      Distance_market_town,
       lnpop1801
     ) %>%
     pivot_longer(
