@@ -131,18 +131,19 @@ sum_tex = summary_stats %>%
   kable_styling(
     latex_options = c("hold_position", "scale_down")
   ) %>%
-  group_rows("A. Census", 1, NROW(sum_table_census)) %>%
+  group_rows("A. Economy", 1, NROW(sum_table_census)) %>%
   group_rows("B. Grundtvig", NROW(sum_table_census) + 1, NROW(summary_stats))
 
 sink("Tables/Summary_Statistics.txt")
 cat(sum_tex)
 sink()
+print(sum_tex) # To display in console when running the script
 
 # ==== Densities ====
 p1 = census %>%
   group_by(GIS_ID) %>%
-  mutate(Ever_rail = case_when(mean(RailAccess) > 0 ~ "Yes", TRUE ~ "No")) %>%
-  filter(Year == 1850, RailAccess == 0) %>%  # Exclude parishes with railways already
+  mutate(Ever_rail = case_when(mean(Connected_railway) > 0 ~ "Yes", TRUE ~ "No")) %>%
+  filter(Year == 1850, Connected_railway == 0) %>%  # Exclude parishes with railways already
   mutate(
     lnpop1801 = log(Pop1801)
   ) %>%
@@ -218,14 +219,14 @@ p1 = census %>%
   ) + 
   theme(legend.position = "bottom")
 
-p1
+print(p1)
 
 ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height)
 
 # Grundtvig
 p1 = grundtvig %>%
   group_by(GIS_ID) %>%
-  mutate(Ever_rail = case_when(mean(RailAccess) > 0 ~ "Yes", TRUE ~ "No")) %>%
+  mutate(Ever_rail = case_when(mean(Connected_railway) > 0 ~ "Yes", TRUE ~ "No")) %>%
   select(Year, Ever_rail, Assembly_house, HighSchool) %>%
   pivot_longer(
     cols = c(Assembly_house, HighSchool),
@@ -257,42 +258,42 @@ ggsave("Plots/Grundtvig_over_time.png", p1, width = 0.75*dims$width, height = 1.
 # ==== Regressions ====
 
 # ==== TWFE regressions (Census data) ====
-form1 = as.formula(paste("lnPopulation ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form1 = as.formula(paste("lnPopulation ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe1 = feols(
   form1,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form2 = as.formula(paste("lnChild_women_ratio ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form2 = as.formula(paste("lnChild_women_ratio ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe2 = feols(
   form2,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form3 = as.formula(paste("lnManufacturing ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form3 = as.formula(paste("lnManufacturing ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe3 = feols(
   form3,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form4 = as.formula(paste("lnNotAgriculture ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form4 = as.formula(paste("lnNotAgriculture ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe4 = feols(
   form4,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form5 = as.formula(paste("HISCAM_avg ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form5 = as.formula(paste("HISCAM_avg ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe5 = feols(
   form5,
   data = census,
   cluster = ~ GIS_ID
 )
 
-form6 = as.formula(paste("lnMigration ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form6 = as.formula(paste("lnMigration ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 twfe6 = feols(
   form6,
   data = census,
@@ -456,7 +457,7 @@ if (!identical(outcomes_twfe, outcomes_cs)) {
 outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe)), outcomes_twfe))
 
 
-twfe_coef <- c("RailAccess", 
+twfe_coef <- c("Connected_railway", 
                sprintf("%.3f", twfe1$coefficients[1]),
                sprintf("%.3f", twfe2$coefficients[1]), 
                sprintf("%.3f", twfe3$coefficients[1]), 
@@ -499,7 +500,7 @@ year_fe <- c("Year FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 
 twfe_obs <- c("Obs.", twfe1$nobs, twfe2$nobs, twfe3$nobs, twfe4$nobs, twfe5$nobs, twfe6$nobs)
 
-did_coef <- c("RailAccess", 
+did_coef <- c("Connected_railway", 
               sprintf("%.3f",agg_mod1$overall.att),
               sprintf("%.3f",agg_mod2$overall.att),
               sprintf("%.3f",agg_mod3$overall.att),
@@ -586,42 +587,42 @@ kbl(results,
 # ==== Instrumental Variable Approach ====
 
 # ==== TSLS regressions (Census data) ====
-form1 <- as.formula(paste("lnPopulation ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form1 <- as.formula(paste("lnPopulation ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls1 = feols(
   form1,  # Full formula including covariates, fixed effects, and IV
   data = census_iv,
   cluster = ~ GIS_ID  # Clustering
 )
 
-form2 <- as.formula(paste("lnChild_women_ratio ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form2 <- as.formula(paste("lnChild_women_ratio ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls2 = feols(
   form2,
   data = census_iv,
   cluster = ~ GIS_ID
 )
 
-form3 <- as.formula(paste("lnManufacturing ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form3 <- as.formula(paste("lnManufacturing ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls3 = feols(
   form3,
   data = census_iv,
   cluster = ~ GIS_ID
 )
 
-form4 <- as.formula(paste("lnNotAgriculture ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form4 <- as.formula(paste("lnNotAgriculture ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls4 = feols(
   form4,
   data = census_iv,
   cluster = ~ GIS_ID
 )
 
-form5 <- as.formula(paste("HISCAM_avg ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form5 <- as.formula(paste("HISCAM_avg ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls5 = feols(
   form5,
   data = census_iv,
   cluster = ~ GIS_ID
 )
 
-form6 <- as.formula(paste("lnMigration ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form6 <- as.formula(paste("lnMigration ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls6 = feols(
   form6,
   data = census_iv,
@@ -646,7 +647,7 @@ etable(
   fitstat = ~ n + ivf,
   tex = T,
   digits = 3,
-  keep = "RailAccess",
+  keep = "Connected_railway",
   title = "Railways and local development (TSLS estimates)",
   extralines = list(
     "__Nodes dropped (10km)" = nodes_dropped,
@@ -656,42 +657,42 @@ etable(
 
 
 # === Reduced form TWFE with Instrument ===
-form1 = as.formula(paste("lnPopulation ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form1 = as.formula(paste("lnPopulation ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe1_red = feols(
   form1,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
-form2 = as.formula(paste("lnChild_women_ratio ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form2 = as.formula(paste("lnChild_women_ratio ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe2_red = feols(
   form2,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
-form3 = as.formula(paste("lnManufacturing ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form3 = as.formula(paste("lnManufacturing ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe3_red = feols(
   form3,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
-form4 = as.formula(paste("lnNotAgriculture ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form4 = as.formula(paste("lnNotAgriculture ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe4_red = feols(
   form4,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
-form5 = as.formula(paste("HISCAM_avg ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form5 = as.formula(paste("HISCAM_avg ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe5_red = feols(
   form5,
   data = census_cs,
   cluster = ~ GIS_ID
 )
 
-form6 = as.formula(paste("lnMigration ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form6 = as.formula(paste("lnMigration ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe6_red = feols(
   form6,
   data = census_cs,
@@ -851,7 +852,7 @@ if (!identical(outcomes_twfe_reduced, outcomes_cs_reduced) ||
 outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe_reduced)), outcomes_twfe_reduced))
 
 
-twfe_iv_coef <- c("fit_RailAccess", 
+twfe_iv_coef <- c("fit_Connected_railway", 
                   sprintf("%.3f", tsls1$coefficients[1]),
                   sprintf("%.3f", tsls2$coefficients[1]),
                   sprintf("%.3f", tsls3$coefficients[1]),
@@ -890,7 +891,7 @@ twfe_iv_se <- c("",
 parish_fe <- c("Parish FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 year_fe <- c("Year FE", "Yes", "Yes", "Yes", "Yes", "Yes", "Yes")
 
-twfe_red_coef <- c("LCPAccess", 
+twfe_red_coef <- c("Connected_lcp", 
                    sprintf("%.3f", twfe1_red$coefficients[1]),
                    sprintf("%.3f", twfe2_red$coefficients[1]),
                    sprintf("%.3f", twfe3_red$coefficients[1]),
@@ -927,7 +928,7 @@ twfe_red_se <- c("",
                  sprintf("(%.3f)", twfe6_red$se[1]))
 
 # did coeffcicients reduced form
-did_coef_red <- c("LCPAccess", 
+did_coef_red <- c("Connected_lcp", 
                   sprintf("%.3f", agg_mod1$overall.att),
                   sprintf("%.3f", agg_mod2$overall.att),
                   sprintf("%.3f", agg_mod3$overall.att),
@@ -1035,19 +1036,19 @@ kbl(results,
 # === First-stage table === #
 #############################
 first1 = feols(
-  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  lnPopulation ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = census,
   cluster = ~ GIS_ID  # Clustering
 )
 
 first2 = feols(
-  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  lnPopulation ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = census_iv,
   cluster = ~ GIS_ID  # Clustering
 )
 
 first3 = feols(
-  lnPopulation ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  lnPopulation ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = census_cs,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1057,7 +1058,7 @@ first3 = feols(
 first4 = feols(
   lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = census,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1065,7 +1066,7 @@ first4 = feols(
 first5 = feols(
   lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = census_iv,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1073,14 +1074,14 @@ first5 = feols(
 first6 = feols(
   lnPopulation ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = census_cs,
   cluster = ~ GIS_ID  # Clustering
 )
 
 # create table
 etable(first1, first2, first3, first4, first5, first6,
-       keep = "LCPAccess",
+       keep = "Connected_lcp",
        stage = 1,
        tex = T,
        signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
@@ -1098,14 +1099,14 @@ etable(first1, first2, first3, first4, first5, first6,
 
 
 # TWFE
-form1 = as.formula(paste("Assembly_house ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form1 = as.formula(paste("Assembly_house ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 mod1 = feols(
   form1,
   data = grundtvig,
   cluster = ~ GIS_ID
 )
 
-form2 = as.formula(paste("HighSchool ~ RailAccess +", xformula, "| GIS_ID + Year"))
+form2 = as.formula(paste("HighSchool ~ Connected_railway +", xformula, "| GIS_ID + Year"))
 mod2 = feols(
   form2,
   data = grundtvig,
@@ -1114,7 +1115,7 @@ mod2 = feols(
 
 # View results
 etable(mod1, mod2,
-       keep = "RailAccess")
+       keep = "Connected_railway")
 
 # ==== Doubly Robust DID: Grundtvig ====
 
@@ -1190,7 +1191,7 @@ outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe)), outcomes_t
 # Built output table row by row
 
 # TWFE Coefficients
-twfe_coef <- c("RailAccess", 
+twfe_coef <- c("Connected_railway", 
                sprintf("%.3f", mod1$coefficients[1]),
                sprintf("%.3f", mod2$coefficients[1]))
 
@@ -1229,7 +1230,7 @@ did_obs <- c("Obs.",
              agg_mod2$DIDparams$n * agg_mod1$DIDparams$nT)
 
 # CS DiD coefficient
-did_coef <- c("RailAccess", 
+did_coef <- c("Connected_railway", 
               sprintf("%.3f", agg_mod1$overall.att),
               sprintf("%.3f", agg_mod2$overall.att))
 
@@ -1295,14 +1296,14 @@ kbl(results,
 # With Instrument ##########################################################################
 
 # ==== TSLS regressions (Census data) ====
-form1 <- as.formula(paste("Assembly_house ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form1 <- as.formula(paste("Assembly_house ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls1 = feols(
   form1,
   data = grundtvig_iv,
   cluster = ~ GIS_ID
 )
 
-form2 <- as.formula(paste("HighSchool ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
+form2 <- as.formula(paste("HighSchool ~", xformula, "| GIS_ID + Year | Connected_railway ~ Connected_lcp"))
 tsls2 = feols(
   form2,
   data = grundtvig_iv,
@@ -1327,7 +1328,7 @@ etable(
   fitstat = ~ n + ivf,
   tex = T,
   digits = 3,
-  keep = "RailAccess",
+  keep = "Connected_railway",
   title = "Railways and Grundtvigianism (TSLS estimates)",
   extralines = list(
     "__Nodes dropped (10km)" = nodes_dropped,
@@ -1338,14 +1339,14 @@ etable(
 #####
 
 # REDUCED FORM
-form1 = as.formula(paste("Assembly_house ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form1 = as.formula(paste("Assembly_house ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe1_red <- feols(
   form1,
   data = grundtvig_cs,
   cluster = ~ GIS_ID
 )
 
-form2 = as.formula(paste("HighSchool ~ LCPAccess +", xformula, "| GIS_ID + Year"))
+form2 = as.formula(paste("HighSchool ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
 twfe2_red <- feols(
   form2,
   data = grundtvig_cs,
@@ -1430,7 +1431,7 @@ if (!identical(outcomes_twfe_reduced, outcomes_cs_reduced) ||
 outcomes_header <- c(" " = 1, setNames(rep(1, length(outcomes_twfe_reduced)), outcomes_twfe_reduced))
 
 # coefficients
-twfe_iv_coef <- c("fit_RailAccess", 
+twfe_iv_coef <- c("fit_Connected_railway", 
                   sprintf("%.3f", tsls1$coefficients[1]), sprintf("%.3f", tsls2$coefficients[1]))
 
 # Add ***
@@ -1460,7 +1461,7 @@ twfe_iv_se <- c("",
 parish_fe <- c("Parish FE", "Yes", "Yes")
 year_fe <- c("Year FE", "Yes", "Yes")
 
-twfe_red_coef <- c("LCPAccess", 
+twfe_red_coef <- c("Connected_lcp", 
                    sprintf("%.3f", twfe1_red$coefficients[1]), 
                    sprintf("%.3f", twfe2_red$coefficients[1]))
 
@@ -1489,7 +1490,7 @@ twfe_red_se <- c("",
                  sprintf("(%.3f)", twfe2_red$se[1]))
 
 # did coefficicients reduced form
-did_coef_red <- c("LCPAccess", sprintf("%.3f", agg_mod1$overall.att), sprintf("%.3f",agg_mod2$overall.att))
+did_coef_red <- c("Connected_lcp", sprintf("%.3f", agg_mod1$overall.att), sprintf("%.3f",agg_mod2$overall.att))
 
 # Add significance stars to DID coefficients based on p-values
 did_coef_red[2:3] <- sapply(2:3, function(i) {
@@ -1572,19 +1573,19 @@ kbl(results,
 #######################################
 
 first1 = feols(
-  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  Assembly_house ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = grundtvig,
   cluster = ~ GIS_ID  # Clustering
 )
 
 first2 = feols(
-  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  Assembly_house ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = grundtvig_iv,
   cluster = ~ GIS_ID  # Clustering
 )
 
 first3 = feols(
-  Assembly_house ~ 1 | GIS_ID + Year | RailAccess ~ LCPAccess, 
+  Assembly_house ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp, 
   data = grundtvig_cs,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1594,7 +1595,7 @@ first3 = feols(
 first4 = feols(
   Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = grundtvig,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1602,7 +1603,7 @@ first4 = feols(
 first5 = feols(
   Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = grundtvig_iv,
   cluster = ~ GIS_ID  # Clustering
 )
@@ -1610,14 +1611,14 @@ first5 = feols(
 first6 = feols(
   Assembly_house ~ Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year 
   | GIS_ID + Year 
-  | RailAccess ~ LCPAccess, 
+  | Connected_railway ~ Connected_lcp, 
   data = grundtvig_cs,
   cluster = ~ GIS_ID  # Clustering
 )
 
 # create table
 etable(first1, first2, first3, first4, first5, first6,
-       keep = "LCPAccess",
+       keep = "Connected_lcp",
        stage = 1,
        tex = T,
        signif.code = c("*" = 0.10, "**" = 0.05, "***" = 0.01),  
