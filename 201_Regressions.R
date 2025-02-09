@@ -120,7 +120,7 @@ summary_stats = bind_rows(
 )
 
 # Create tex table
-summary_stats %>%
+sum_tex = summary_stats %>%
   kable(
     format = "latex",
     booktabs = TRUE,
@@ -133,6 +133,10 @@ summary_stats %>%
   ) %>%
   group_rows("A. Census", 1, NROW(sum_table_census)) %>%
   group_rows("B. Grundtvig", NROW(sum_table_census) + 1, NROW(summary_stats))
+
+sink("Tables/Summary_Statistics.txt")
+cat(sum_tex)
+sink()
 
 # ==== Densities ====
 p1 = census %>%
