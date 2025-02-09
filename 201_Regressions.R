@@ -8,7 +8,6 @@
 library(tidyverse)
 library(fixest)
 library(did)
-library(readxl)
 library(psych) # for summary stats
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")

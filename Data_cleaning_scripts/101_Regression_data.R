@@ -7,6 +7,7 @@
 # ==== Libraries ====
 library(tidyverse)
 library(foreach)
+library(readxl)
 
 # ==== Load data ====
 railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
