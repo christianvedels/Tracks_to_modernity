@@ -174,7 +174,10 @@ census = census %>%
 
     # Area parish
     area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    area_parish_year = paste(area_decile, Year, sep = "_")
+    area_parish_year = paste(area_decile, Year, sep = "_"),
+
+    # County by year
+    county_by_year = paste(County, Year, sep = "_")
   )
 
 # Create Treat_year variable
@@ -245,7 +248,10 @@ grundtvig = grundtvig %>%
     
     # Area parish
     area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    area_parish_year = paste(area_decile, Year, sep = "_")
+    area_parish_year = paste(area_decile, Year, sep = "_"),
+
+    # County by year
+    county_by_year = paste(County, Year, sep = "_")
   )
 
 
