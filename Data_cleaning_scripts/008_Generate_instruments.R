@@ -26,11 +26,11 @@ library(terra)
 crit_slope_values = c(1:16)
 
 # ==== Load data (Railway shape data and Outline of Denmark) ====
-shape_data = st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>% st_transform(4326)
-outline_dk = st_read("../../Data not redistributable/Outline DK/DNK_adm0.shp") %>% st_transform(4326)
+shape_data = st_read("../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>% st_transform(4326)
+outline_dk = st_read("../Data not redistributable/Outline DK/DNK_adm0.shp") %>% st_transform(4326)
 
 # Reading in market towns
-market_towns = read_delim("../Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE, locale =locale(encoding = "ISO-8859-1"))
+market_towns = read_delim("Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE, locale =locale(encoding = "ISO-8859-1"))
 
 # -----------
 # Clean Coord column in market towns
@@ -69,6 +69,7 @@ market_towns <- market_towns %>%
 
 # Obtain elevation raster (from OpenStreetMap)
 denmark_elev = get_elev_raster(outline_dk, z = 8, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
+denmark_elev = get_elev_raster(outline_dk, z = 9, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
 # ==== Plot elev ====
 plot(denmark_elev)
@@ -101,7 +102,7 @@ for (crit_slope in crit_slope_values) {
   
   # Construct the file path dynamically based on the crit_slope value
   file_path = paste0(
-    "../../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
+    "../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
     slope_label,
     ".rds"
   )
@@ -118,7 +119,7 @@ for (i in crit_slope_values) {
   
   # Construct the file path for each crit_slope value
   file_path = paste0(
-    "../../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
+    "../Data not redistributable/Instrument_shapes/lcp_slope_cost_surfaces/slope_cs_crit_",
     i,
     ".rds"
   )
@@ -198,7 +199,7 @@ plot(nodes_sf$geometry, add = T, col = "yellow")
 # === Creation of file that contains all unique GIS_IDs and their respective minimum distance to nodes
 
 # Load shape files
-shape_parishes <- read_sf("../../Data not redistributable/DK parish shapefile/Parish1820Counting1837.shp")
+shape_parishes <- read_sf("../Data not redistributable/DK parish shapefile/Parish1820Counting1837.shp")
 
 # Ensure valid geometries
 shape_parishes <- st_make_valid(shape_parishes)
@@ -354,13 +355,13 @@ for (slope_label in names(cost_surfaces)) {
 # Save LCPs for each cost surface with town_pair in shapefile
 for (slope_label in names(lcp_sf_all_cost_surfaces)) {
   st_write(lcp_sf_all_cost_surfaces[[slope_label]], 
-           paste0("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_", slope_label, ".shp"), 
+           paste0("../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_", slope_label, ".shp"), 
            driver = "ESRI Shapefile",
            append = F) # replace existing file
 }
 
 
-test = st_read("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
+test = st_read("../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
 plot(test$geometry)
 
 
