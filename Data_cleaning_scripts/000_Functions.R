@@ -466,3 +466,30 @@ signif0 = function(x, digits = 4){
   return(x)
 }
 
+
+# ==== extract_res (from cs estimates) ====
+extract_res = function(summary_results){
+  
+  extracted_res = lapply(
+    summary_results, function(x){
+      t = x$overall.att / x$overall.se
+      p = pnorm(abs(t), lower.tail = FALSE)*2
+      data.frame(
+        "Estimate" = x$overall.att,
+        "SE" = x$overall.se,
+        "t" = t,
+        "p" = p,
+        n = x$DIDparams$n,
+        n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
+        control_group = x$DIDparams$control_group,
+        mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+        outcome = x$DIDparams$yname
+      )
+    }
+  )
+
+  extracted_res = do.call(bind_rows, extracted_res)
+
+
+  return(extracted_res)
+}
