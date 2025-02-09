@@ -8,7 +8,6 @@
 library(tidyverse)
 library(fixest)
 library(did)
-library(psych) # for summary stats
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
@@ -42,7 +41,7 @@ grundtvig_iv = grundtvig %>%
 
 # === Summary Statistics ===
 # 1) Census data
-stats_census <- describe(census[, c("Population", 
+stats_census <- psych::describe(census[, c("Population", 
                            "lnManufacturing",
                            "lnNotAgriculture",
                            "Child_women_ratio", 
@@ -76,7 +75,7 @@ kbl(stats_selected,
 
 
 # 2) Grundtvig data
-stats_grundtvig <- describe(grundtvig[, c("Assembly_house", 
+stats_grundtvig <- psych::describe(grundtvig[, c("Assembly_house", 
                                     "HighSchool",
                                     "RailAccess",
                                     "LCPAccess")])
