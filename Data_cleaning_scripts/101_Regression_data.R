@@ -8,6 +8,7 @@
 library(tidyverse)
 library(foreach)
 library(readxl)
+source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
 railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
@@ -338,8 +339,8 @@ census = left_join(census, invalid_comparison, by = "GIS_ID")
 grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
 
 # ==== Save data ====
-census %>% 
+grundtvig %>% 
   write_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
 
-grundtvig %>% 
+census %>% 
   write_csv2("Data/REGRESSION_DATA_Demography.csv")
