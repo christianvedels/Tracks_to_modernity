@@ -458,3 +458,11 @@ min_treat_year = function(year, treat){
 }
 
 
+# ==== signif0 ====
+signif0 = function(x, digits = 4){
+  if(is.numeric(x)){
+    x = signif(x, digits = digits)
+  }
+  return(x)
+}
+
