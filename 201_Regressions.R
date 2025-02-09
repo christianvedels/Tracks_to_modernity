@@ -12,13 +12,25 @@ library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
-xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
-# xformula = "1"
+# xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
+xformula = "1"
+NSIGNIF = 4 # Significant digits in all tables
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
 rail_panel = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 100000)
+
+# ==== Renaming =====
+census = census %>% rename(
+  Connected_railway = RailAccess,
+  Connected_lcp = LCPAccess
+)
+
+grundtvig = grundtvig %>% rename(
+  Connected_railway = RailAccess,
+  Connected_lcp = LCPAccess
+)
 
 # ==== Create subsamples for IV and CS (IV reduced form) ====
 # create census cs
@@ -40,68 +52,87 @@ grundtvig_iv = grundtvig %>%
   filter(away_from_node == 1)
 
 # === Summary Statistics ===
-# 1) Census data
-stats_census <- psych::describe(census[, c("Population", 
-                           "lnManufacturing",
-                           "lnNotAgriculture",
-                           "Child_women_ratio", 
-                           "HISCAM_avg", 
-                           "Migration", 
-                           "RailAccess",
-                           "LCPAccess")])
-
-
-# Select only relevant columns
-stats_selected <- stats_census[, c("n", "mean", "sd", "min", "max")]
-
-stats_selected <- stats_selected %>%
-  mutate(across(c(mean, sd, min, max), ~ round(.x, 3)))
-
-
-# Create summary statistics latex table
-kbl(stats_selected, 
-    booktabs = T, 
-    caption = "Summary Statistics: Railways and Local Development", 
-    row.names = T,
-    align = "cccccc",
-    linesep = "",  # Suppress additional line spacing
-    format = "latex") %>%
-  kable_styling(
-    latex_options = c("hold_position", "scale_down") # Ensures [!h] placement and that it firs the page
+sum_table_census = census %>%
+  select(
+    Population,
+      lnManufacturing,
+      lnNotAgriculture,
+      Child_women_ratio,
+      HISCAM_avg,
+      Migration,
+      Connected_railway,
+      Connected_lcp
   ) %>%
-  group_rows("Economy", 1, 6) %>%
-  group_rows("Infrastructure", 7, 8) %>%
-  footnote(general = "Here is a general comments of the table. ")
-
-
-# 2) Grundtvig data
-stats_grundtvig <- psych::describe(grundtvig[, c("Assembly_house", 
-                                    "HighSchool",
-                                    "RailAccess",
-                                    "LCPAccess")])
-
-
-# Select only relevant columns
-stats_selected <- stats_grundtvig[, c("n", "mean", "sd", "min", "max")]
-
-stats_selected <- stats_selected %>%
-  mutate(across(c(mean, sd, min, max), ~ round(.x, 3)))
-
-
-# Create summary statistics latex table
-kbl(stats_selected, 
-    booktabs = T, 
-    caption = "Summary Statistics: Railways and Grundtvigianism", 
-    row.names = T,
-    align = "ccccc",
-    linesep = "",  # Suppress additional line spacing
-    format = "latex") %>%
-  kable_styling(
-    latex_options = c("hold_position", "scale_down") # Ensures [!h] placement
+  pivot_longer(
+    cols = c(
+      Population,
+      lnManufacturing,
+      lnNotAgriculture,
+      Child_women_ratio,
+      HISCAM_avg,
+      Migration,
+      Connected_railway,
+      Connected_lcp
+    ),
+    names_to = "var"
   ) %>%
-  group_rows("Grundtvig", 1, 2) %>%
-  group_rows("Infrastructure", 3, 4)  %>%
-  footnote(general = "Here is a general comments of the table. ")
+  group_by(var) %>%
+  summarise(
+    n = sum(!is.na(value)),
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    min = min(value, na.rm = TRUE),
+    max = max(value, na.rm = TRUE)
+  ) %>%
+  mutate_all(signif0, digits = NSIGNIF) %>%
+  ungroup()
+
+sum_table_grundtvig = grundtvig %>%
+  select(
+    Assembly_house,
+    HighSchool,
+    Connected_railway,
+    Connected_lcp
+  ) %>%
+  pivot_longer(
+    cols = c(
+      Assembly_house,
+      HighSchool,
+      Connected_railway,
+      Connected_lcp
+    ),
+    names_to = "var"
+  ) %>%
+  group_by(var) %>%
+  summarise(
+    n = sum(!is.na(value)),
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    min = min(value, na.rm = TRUE),
+    max = max(value, na.rm = TRUE)
+  ) %>%
+  mutate_all(signif0, digits = NSIGNIF) %>%
+  ungroup()
+
+summary_stats = bind_rows(
+  sum_table_census %>% mutate(dataset = "Census"),
+  sum_table_grundtvig %>% mutate(dataset = "Grundtvig")
+)
+
+# Create tex table
+summary_stats %>%
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    caption = "Summary Statistics",
+    col.names = c("Variable", "Dataset", "N", "Mean", "SD", "Min", "Max"),
+    align = "lcccccc"
+  ) %>%
+  kable_styling(
+    latex_options = c("hold_position", "scale_down")
+  ) %>%
+  group_rows("A. Census", 1, NROW(sum_table_census)) %>%
+  group_rows("B. Grundtvig", NROW(sum_table_census) + 1, NROW(summary_stats))
 
 # ==== Densities ====
 p1 = census %>%
