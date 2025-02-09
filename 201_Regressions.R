@@ -15,179 +15,31 @@ source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
 xformula = "Boulder_clay_pct_year + Dist_hamb_year + Pop1801_year + area_parish_year + Dist_mt_year + Dist_cph_year + Dist_ox_year"
-#xformula = "1"
+# xformula = "1"
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
 rail_panel = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 100000)
 
-# ==== Clean census data ====
-census = census %>%
-  rename(
-    # Rename and create new variables
-    Population    = Pop,
-    HISCAM_avg    = hiscam_avg,
-    Migration     = Born_different_county,
-    RailAccess    = Connected_rail,
-    RailDist      = Distance_to_nearest_railway,
-    LCPAccess     = Connected_rail_instr,
-    LCPDist       = Distance_to_nearest_railway_instr
-  ) %>%
-  mutate(
-    # Create logged variables
-    lnPopulation       = log(Population),
-    lnManufacturing    = log(Manufacturing_789 + 1),
-    lnFarming          = log(Farming + 1),
-    lnChild_women_ratio = log(Child_women_ratio + 1),
-    lnHISCAM_avg       = log(HISCAM_avg),
-    lnMigration        = log(Migration + 1),
-    
-    # Convert Year and GIS_ID for subsequent operations
-    Year_num = as.numeric(as.character(Year)),
-    GIS_ID_num = as.numeric(factor(GIS_ID)),
-    
-  ) %>%
-  ungroup() %>%
-  mutate(
-    # Cut Boulder_clay_pct into quantiles
-    Boulder_clay_decile = cut(Boulder_clay_pct, breaks = unique(quantile(Boulder_clay_pct, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Boulder_clay_pct_year = paste(Boulder_clay_decile, Year, sep = "_"),
+# ==== Create subsamples for IV and CS (IV reduced form) ====
+# create census cs
+census_cs = census %>% 
+  filter(invalid_comparison == 0) %>%
+  filter(away_from_node == 1)
 
-    # Cut Dist_hamb into quantiles
-    Dist_hamb_decile = cut(dist_hmb, breaks = unique(quantile(dist_hmb, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_hamb_year = paste(Dist_hamb_decile, Year, sep = "_"),
-    
-    # Cut Dist_cph into quantiles
-    Dist_cph_decile = cut(dist_cph, breaks = unique(quantile(dist_cph, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_cph_year = paste(Dist_cph_decile, Year, sep = "_"),
-    
-    # Cut Dist_cph into quantiles
-    Dist_ox_decile = cut(DistOxRoad, breaks = unique(quantile(DistOxRoad, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_ox_year = paste(Dist_ox_decile, Year, sep = "_"),
-    
-    # Cut Dist_mt into quantiles
-    Dist_mt_decile = cut(Distance_market_town, breaks = unique(quantile(Distance_market_town, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_mt_year = paste(Dist_mt_decile, Year, sep = "_"),
+# create grundtvig_cs
+grundtvig_cs = grundtvig %>%
+  filter(invalid_comparison == 0) %>%
+  filter(away_from_node == 1)
 
-    # Cut pop 1801 into quantiles
-    Pop1801_decile = cut(Pop1801, breaks = unique(quantile(Pop1801, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Pop1801_year = paste(Pop1801_decile, Year, sep = "_"),
+# create census iv
+census_iv = census %>% 
+  filter(away_from_node == 1)
 
-    # Area parish
-    area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    area_parish_year = paste(area_decile, Year, sep = "_")
-  )
-
-# Create Treat_year variable
-census = census %>%
-  group_by(GIS_ID) %>%
-  mutate(
-    Treat_year = min_treat_year(Year, RailAccess),
-    Treat_year_instr = min_treat_year(Year, LCPAccess)
-  ) %>%
-  ungroup()
-
-# Create Not agriculture
-census = census %>% mutate(
-  NotAgriculture = hisco_major0 + hisco_major1 + hisco_major2 + hisco_major3 + hisco_major4 + hisco_major5 + hisco_major7 + hisco_major8 + hisco_major9
-) %>%
-  mutate(
-    lnNotAgriculture = log(1 + NotAgriculture)
-  )
-
-
-# === Delete duplicates Census ===
-
-# Store the original number of observations
-original_rows <- nrow(census)
-
-# Remove duplicates and reassign to the same variable
-census <- census %>%
-  ungroup() %>%
-  distinct()
-
-# Calculate and display the number of observations removed
-cat("Number of observations removed due to duplicate removal:", original_rows - nrow(census), "\n")
-
-# ==== Clean Grundtvig data ====
-grundtvig = grundtvig %>%
-  rename(
-    RailAccess = Connected_rail,
-    LCPAccess  = Connected_rail_instr
-  ) %>% 
-  mutate(
-    Year_num   = as.numeric(as.character(Year)),
-    GIS_ID_num = as.numeric(factor(GIS_ID))
-  ) %>%
-  ungroup() %>%
-  mutate(
-    # Cut Boulder_clay_pct into quantiles
-    Boulder_clay_decile = cut(Boulder_clay_pct, breaks = unique(quantile(Boulder_clay_pct, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Boulder_clay_pct_year = paste(Boulder_clay_decile, Year, sep = "_"),
-    
-    # Cut Dist_hamb into quantiles
-    Dist_hamb_decile = cut(dist_hmb, breaks = unique(quantile(dist_hmb, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_hamb_year = paste(Dist_hamb_decile, Year, sep = "_"),
-    
-    # Cut Dist_cph into quantiles
-    Dist_cph_decile = cut(dist_cph, breaks = unique(quantile(dist_cph, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_cph_year = paste(Dist_cph_decile, Year, sep = "_"),
-    
-    # Cut Dist_cph into quantiles
-    Dist_ox_decile = cut(DistOxRoad, breaks = unique(quantile(DistOxRoad, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_ox_year = paste(Dist_ox_decile, Year, sep = "_"),
-    
-    # Cut Dist_mt into quantiles
-    Dist_mt_decile = cut(Distance_market_town, breaks = unique(quantile(Distance_market_town, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Dist_mt_year = paste(Dist_mt_decile, Year, sep = "_"),
-    
-    # Cut pop 1801 into quantiles
-    Pop1801_decile = cut(Pop1801, breaks = unique(quantile(Pop1801, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    Pop1801_year = paste(Pop1801_decile, Year, sep = "_"),
-    
-    # Area parish
-    area_decile = cut(area_parish, breaks = unique(quantile(area_parish, probs = seq(0, 1, by = 0.1), na.rm = TRUE)), include.lowest = TRUE),
-    area_parish_year = paste(area_decile, Year, sep = "_")
-  )
-
-
-# Create Treat_year variable
-grundtvig = grundtvig %>%
-  group_by(GIS_ID) %>%
-  mutate(
-    Treat_year = min_treat_year(Year, RailAccess),
-    Treat_year_instr = min_treat_year(Year, LCPAccess)
-  ) %>%
-  ungroup()
-
-# Redefine Assembly_house and High School as a dummy
-grundtvig = grundtvig %>%
-  mutate(
-    Assembly_house = ifelse(Assembly_house > 0, 1, Assembly_house),
-    HighSchool = ifelse(HighSchool > 0, 1, HighSchool)
-  ) %>%
-  # NA in assembly house means 0 
-  mutate(
-    Assembly_house = replace_na(Assembly_house, 0),
-  )
-
-# Aline period
-grundtvig = grundtvig %>%
-  filter(Year <= 1920)
-
-# === Delete duplicates Grundtvig ===
-
-# Store the original number of observations
-original_rows <- nrow(grundtvig)
-
-# Remove duplicates and reassign to the same variable
-grundtvig <- grundtvig %>%
-  ungroup() %>%
-  distinct()
-
-# Calculate and display the number of observations removed
-cat("Number of observations removed due to duplicate removal:", original_rows - nrow(grundtvig), "\n")
+# create grundtvig_iv
+grundtvig_iv = grundtvig %>%
+  filter(away_from_node == 1)
 
 # === Summary Statistics ===
 # 1) Census data
@@ -369,87 +221,7 @@ p1 = grundtvig %>%
 p1
 ggsave("Plots/Grundtvig_over_time.png", p1, width = 0.75*dims$width, height = 1.5*dims$height)
 
-#################################
-# === Add distance to nodes === #
-#################################
-
-# load nodes_distance data
-distance_to_nodes = read_excel("Data/distance_to_nodes.xlsx")
-
-distance_to_nodes = distance_to_nodes %>%
-  mutate(GIS_ID = as.character(GIS_ID)) %>%
-  mutate(
-    away_from_node = ifelse(min_distance_to_node_km > 10, 1, 0)
-  )
-
-census = left_join(census, distance_to_nodes, by = "GIS_ID")
-grundtvig = left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
-
-############################################################################
-# === Add variable for invalid comparisons (i.e. connected after 1876) === #
-############################################################################
-later_connected_GIS_ID = rail_panel %>% 
-  filter(Year > 1876) %>%
-  filter(Year < 1920) %>%
-  group_by(GIS_ID) %>%
-  summarise(
-    Connected_rail = max(Connected_rail)
-  ) %>% 
-  filter(Connected_rail == 1) %>%
-  pull(GIS_ID)
-
-earlier_connected_GIS_ID = rail_panel %>% 
-  filter(Year <= 1876) %>%
-  filter(Year < 1920) %>%
-  group_by(GIS_ID) %>%
-  summarise(
-    Connected_rail = max(Connected_rail)
-  ) %>% 
-  filter(Connected_rail == 1) %>% 
-  pull(GIS_ID)
-
-invalid_comparison = data.frame(
-  GIS_ID = rail_panel$GIS_ID %>% unique()
-) %>%
-  mutate(
-    connected_later = 1*(GIS_ID %in% later_connected_GIS_ID),
-    connected_earlier = 1*(GIS_ID %in% earlier_connected_GIS_ID)
-  ) %>%
-  mutate(
-    never_connected = ifelse(connected_later == 0 & connected_earlier == 0, 1, 0)
-  ) %>%
-  mutate(
-    only_connected_later = ifelse(connected_later == 1 & connected_earlier == 0, 1, 0),
-  ) %>%
-  mutate(
-    invalid_comparison = ifelse(only_connected_later == 1, 1, 0)
-  ) %>% 
-  select(GIS_ID, invalid_comparison)
-
-census = left_join(census, invalid_comparison, by = "GIS_ID")
-grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
-
-# create census cs
-census_cs = census %>% 
-  filter(invalid_comparison == 0) %>%
-  filter(away_from_node == 1)
-
-# create grundtvig_cs
-grundtvig_cs = grundtvig %>%
-  filter(invalid_comparison == 0) %>%
-  filter(away_from_node == 1)
-
-# create census iv
-census_iv = census %>% 
-  filter(away_from_node == 1)
-
-# create grundtvig_iv
-grundtvig_iv = grundtvig %>%
-  filter(away_from_node == 1)
-
-#######################
-# === Regressions === #
-#######################
+# ==== Regressions ====
 
 # ==== TWFE regressions (Census data) ====
 form1 = as.formula(paste("lnPopulation ~ RailAccess +", xformula, "| GIS_ID + Year"))
@@ -778,10 +550,7 @@ kbl(results,
   group_rows("Panel A: TWFE", 1, 5) %>%
   group_rows("Panel B: Callaway and Sant'Anna", 6, 9) 
 
-
-##########################################
-# === Instrumental Variable Approach === #
-##########################################
+# ==== Instrumental Variable Approach ====
 
 # ==== TSLS regressions (Census data) ====
 form1 <- as.formula(paste("lnPopulation ~", xformula, "| GIS_ID + Year | RailAccess ~ LCPAccess"))
