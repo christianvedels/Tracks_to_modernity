@@ -291,7 +291,7 @@ grundtvig_distributions_over_time = function(){
 }
 
 # ==== Function to make plots of cs estimates ====
-save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1, ylab = NA, omit_legend = F){
+save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1, ylab = NA, xlab = NA, omit_legend = F){
   for(i in seq(length(plots))){
     p = plots[[i]]
     print(p)
@@ -306,10 +306,14 @@ save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1,
       ylab = outcomeNames(outcome_names[i])
     }
 
+    if(is.na(xlab)){
+      xlab = "Year"
+    }
+
     p = p + 
       labs(
         y = ylab,
-        x = "Year",
+        x = xlab,
         title = NULL
       ) + 
       theme_bw() + 
@@ -605,10 +609,21 @@ cs_estimates_census = function(xformula = "1"){
     p6 = aggte(cs_mod6, type = "calendar", na.rm = T) %>% ggdid()
   )
 
+  # Plots group
+  plots_group = list(
+    p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "group", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "group", na.rm = T) %>% ggdid(),
+    p5 = aggte(cs_mod5, type = "group", na.rm = T) %>% ggdid(),
+    p6 = aggte(cs_mod6, type = "group", na.rm = T) %>% ggdid()
+  )
+
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Census_full")
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_calendar", mult = 0.3, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Census_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== CS estimates (Grundtvig data) ====
@@ -717,10 +732,17 @@ cs_estimates_grundtvig = function(xformula = "1"){
     p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid()
   )
 
+  # Plots group
+  plots_group = list(
+    p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid()
+  )
+
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_full", mult = 10)
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar")
+  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar", mult = 0.5, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== TSLS regressions (Census data) ====
@@ -1108,10 +1130,21 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     p6 = aggte(cs_mod6, type = "calendar", na.rm = T) %>% ggdid()
   )
 
+  # Plots group
+  plots_group = list(
+    p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "group", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "group", na.rm = T) %>% ggdid(),
+    p5 = aggte(cs_mod5, type = "group", na.rm = T) %>% ggdid(),
+    p6 = aggte(cs_mod6, type = "group", na.rm = T) %>% ggdid()
+  )
+
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Census_reduced_form_full", mult = 10)
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_reduced_form_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Census_reduced_form_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 
@@ -1216,10 +1249,17 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid()
   )
 
+  # Plots group
+  plots_group = list(
+    p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid()
+  )
+
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full")
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_reduced_form_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
+  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar", mult = 0.5, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_reduced_form_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ===== main ==== 
