@@ -1,0 +1,27 @@
+\begingroup
+\centering
+\begin{tabular}{lcc}
+   \tabularnewline \midrule \midrule
+   Dependent Variables: & Assembly\_house  & HighSchool\\  
+   Model:               & (1)              & (2)\\  
+   \midrule
+   \emph{Variables}\\
+   Connected\_railway   & 0.0267$^{**}$    & 0.0090\\   
+                        & (0.0123)         & (0.0056)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   GIS\_ID              & Yes              & Yes\\  
+   Year                 & Yes              & Yes\\  
+   Dist\_hamb\_year     & Yes              & Yes\\  
+   Dist\_cph\_year      & Yes              & Yes\\  
+   Dist\_ox\_year       & Yes              & Yes\\  
+   Pop1801\_year        & Yes              & Yes\\  
+   county\_by\_year     & Yes              & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations         & 138,615          & 138,615\\  
+   \midrule \midrule
+   \multicolumn{3}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
+   \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup

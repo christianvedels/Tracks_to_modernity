@@ -493,3 +493,30 @@ extract_res = function(summary_results){
 
   return(extracted_res)
 }
+
+
+# ==== time_passed ====
+time_passed = function(time0, category = ""){
+  time1 = Sys.time()
+  time_diff = time1 - time0
+  time_diff_secs = as.numeric(time_diff, units = "secs")
+  time_diff_mins = as.numeric(time_diff, units = "mins")
+  time_diff_hours = as.numeric(time_diff, units = "hours")
+  time_diff_secs = round(time_diff_secs, 2)
+  time_diff_mins = round(time_diff_mins, 2)
+  time_diff_hours = round(time_diff_hours, 2)
+
+  to_print = paste0(
+    category,
+    "Time passed: ",
+    time_diff_secs,
+    " seconds (",
+    time_diff_mins,
+    " minutes, ",
+    time_diff_hours,
+    " hours)\n"
+  )
+  cat(to_print)
+  
+  return(time1)
+}

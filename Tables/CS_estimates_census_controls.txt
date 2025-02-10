@@ -1,0 +1,16 @@
+\begin{table}
+
+\caption{Railways and Local Development}
+\centering
+\begin{tabular}[t]{lcccccc}
+\toprule
+  & lnPopulation & lnChild\_women\_ratio & lnManufacturing & lnNotAgriculture & HISCAM\_avg & lnMigration\\
+\midrule
+Connected railway & 0.05044*** & 0.00164 & 0.03624 & 0.02318 & -0.01868 & 0.1023\\
+ & (0.01589) & (0.006306) & (0.04251) & (0.03684) & (0.1395) & (0.0842)\\
+N Obs. & 6324 & 6244 & 6324 & 6324 & 6320 & 6324\\
+N parishes & 1581 & 1561 & 1581 & 1581 & 1580 & 1581\\
+Mean of Outcome & 6.472 & 0.3949 & 4.161 & 4.468 & 48.62 & 4.394\\
+\bottomrule
+\end{tabular}
+\end{table}
