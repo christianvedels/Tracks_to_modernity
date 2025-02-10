@@ -1,0 +1,16 @@
+\begin{table}
+
+\caption{Railways and Grundtvigianism}
+\centering
+\begin{tabular}[t]{lcc}
+\toprule
+  & Assembly\_house & HighSchool\\
+\midrule
+Connected railway & 0.02572 & -0.01484\\
+ & (0.03012) & (0.01669)\\
+N Obs. & 76800 & 76800\\
+N parishes & 1024 & 1024\\
+Mean of Outcome & 0.152 & 0.02531\\
+\bottomrule
+\end{tabular}
+\end{table}

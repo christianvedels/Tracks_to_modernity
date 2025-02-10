@@ -12,7 +12,7 @@ library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
-CONTROLS = "Boulder_clay_pct_year + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year"
+CONTROLS = "Dist_hamb_year + Dist_cph_year + Dist_ox_year + Pop1801_year + county_by_year" # These are decile by year FE
 NSIGNIF = 4 # Significant digits in all tables
 
 # ==== Load data ====
@@ -83,13 +83,13 @@ summary_tables = function(){
   sum_table_census = census %>%
     select(
       Population,
-        lnManufacturing,
-        lnNotAgriculture,
-        Child_women_ratio,
-        HISCAM_avg,
-        Migration,
-        Connected_railway,
-        Connected_lcp
+      lnManufacturing,
+      lnNotAgriculture,
+      Child_women_ratio,
+      HISCAM_avg,
+      Migration,
+      Connected_railway,
+      Connected_lcp
     ) %>%
     pivot_longer(
       cols = c(
@@ -153,8 +153,8 @@ summary_tables = function(){
     ungroup()
 
   summary_stats = bind_rows(
-    sum_table_census %>% mutate(dataset = "Census"),
-    sum_table_grundtvig %>% mutate(dataset = "Grundtvig")
+    sum_table_census,
+    sum_table_grundtvig
   )
 
   # Create tex table
@@ -163,7 +163,7 @@ summary_tables = function(){
       format = "latex",
       booktabs = TRUE,
       caption = "Summary Statistics",
-      col.names = c("Variable", "Dataset", "N", "Mean", "SD", "Min", "Max"),
+      col.names = c("Variable", "N", "Mean", "SD", "Min", "Max"),
       align = "lcccccc"
     ) %>%
     kable_styling(
@@ -198,7 +198,7 @@ census_distributions = function(){
       lnMigration,
       dist_hmb,
       dist_cph,
-      Boulder_clay_pct,
+      DistOxRoad,
       lnpop1801
     ) %>%
     pivot_longer(
@@ -211,7 +211,7 @@ census_distributions = function(){
         lnMigration,
         dist_hmb,
         dist_cph,
-        Boulder_clay_pct,
+        DistOxRoad,
         lnpop1801
       ), 
       names_to = "var"
@@ -684,7 +684,7 @@ cs_estimates_grundtvig = function(xformula = "1"){
   print(res) # To display in console when running the script
 
   # Function to save plots list
-  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig"){
+  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig", mult = 1){
     for(i in seq(length(plots))){
       p = plots[[i]]
       # print(p)
@@ -711,7 +711,7 @@ cs_estimates_grundtvig = function(xformula = "1"){
           col = "Connected to railway:"
         )
 
-      ggsave(fname, p, width = dims$width, height = dims$height)
+      ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
   }
   }
 
@@ -734,7 +734,7 @@ cs_estimates_grundtvig = function(xformula = "1"){
   )
 
   # Save plots
-  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_full")
+  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_full", mult = 10)
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar")
 }
@@ -865,42 +865,42 @@ tsls_regressions_grundtvig = function(xformula = "1"){
 
 # ==== Reduced form regressions (Census data) ====
 reduced_form_regressions_census = function(xformula = "1"){
-  form1 = as.formula(paste("lnPopulation ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form1 = as.formula(paste("lnPopulation ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe1_red = feols(
     form1,
     data = census_cs,
     cluster = ~ GIS_ID
   )
 
-  form2 = as.formula(paste("lnChild_women_ratio ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form2 = as.formula(paste("lnChild_women_ratio ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe2_red = feols(
     form2,
     data = census_cs,
     cluster = ~ GIS_ID
   )
 
-  form3 = as.formula(paste("lnManufacturing ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form3 = as.formula(paste("lnManufacturing ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe3_red = feols(
     form3,
     data = census_cs,
     cluster = ~ GIS_ID
   )
 
-  form4 = as.formula(paste("lnNotAgriculture ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form4 = as.formula(paste("lnNotAgriculture ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe4_red = feols(
     form4,
     data = census_cs,
     cluster = ~ GIS_ID
   )
 
-  form5 = as.formula(paste("HISCAM_avg ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form5 = as.formula(paste("HISCAM_avg ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe5_red = feols(
     form5,
     data = census_cs,
     cluster = ~ GIS_ID
   )
 
-  form6 = as.formula(paste("lnMigration ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form6 = as.formula(paste("lnMigration ~ Connected_lcp | GIS_ID + Year +", xformula))
   twfe6_red = feols(
     form6,
     data = census_cs,
@@ -917,9 +917,9 @@ reduced_form_regressions_census = function(xformula = "1"){
 
   # Tabel name depending on whether xformula is 1 or not
   if (xformula == "1") {
-    table_name = "TSLS_reduced_form_regressions_census"
+    table_name = "Reduced_form_regressions_census"
   } else {
-    table_name = "TSLS_reduced_form_regressions_census_controls"
+    table_name = "Reduced_form_regressions_census_controls"
   }
 
   sink(paste("Tables/", table_name, ".txt", sep = ""))
@@ -931,14 +931,14 @@ reduced_form_regressions_census = function(xformula = "1"){
 
 # ==== Reduced form regressions (Census data) ====
 reduced_form_regressions_grundtvig = function(xformula = "1"){
-  form1 = as.formula(paste("Assembly_house ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form1 = as.formula(paste("Assembly_house ~ Connected_lcp | GIS_ID + Year + ", xformula))
   twfe1_red = feols(
     form1,
     data = grundtvig_cs,
     cluster = ~ GIS_ID
   )
 
-  form2 = as.formula(paste("HighSchool ~ Connected_lcp +", xformula, "| GIS_ID + Year"))
+  form2 = as.formula(paste("HighSchool ~ Connected_lcp | GIS_ID + Year + ", xformula))
   twfe2_red = feols(
     form2,
     data = grundtvig_cs,
@@ -955,9 +955,9 @@ reduced_form_regressions_grundtvig = function(xformula = "1"){
 
   # Tabel name depending on whether xformula is 1 or not
   if (xformula == "1") {
-    table_name = "TSLS_reduced_form_regressions_grundtvig"
+    table_name = "Reduced_form_regressions_grundtvig"
   } else {
-    table_name = "TSLS_reduced_form_regressions_grundtvig_controls"
+    table_name = "Reduced_form_regressions_grundtvig_controls"
   }
 
   sink(paste("Tables/", table_name, ".txt", sep = ""))
@@ -1247,7 +1247,7 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
 
   print(res) # To display in console when running the script
 
-  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig_reduced_form"){
+  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig_reduced_form", mult = 1){
     for(i in seq(length(plots))){
       p = plots[[i]]
       print(p)
@@ -1275,7 +1275,7 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
           color = "Connected to railway:"
         )
 
-      ggsave(fname, p, width = dims$width, height = dims$height)
+      ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
     }
   }
 
@@ -1298,23 +1298,30 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
   )
 
   # Save plots
-  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full")
+  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full", mult = 10)
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_reduced_form_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar")
 }
 
 # ===== main ==== 
 main = function(){
+
+  start_time = Sys.time()
+
   # Descipritve statistics:
   summary_tables()
   census_distributions()
   grundtvig_distributions_over_time()
+
+  time_descriptive = time_passed(start_time, "Descriptive: ")
 
   # TWFE estimates:
   twfe_regressions_census()
   twfe_regressions_grundtvig()
   twfe_regressions_census(CONTROLS)
   twfe_regressions_grundtvig(CONTROLS)
+
+  time_twfe = time_passed(time_descriptive, "TWFE: ")
   
   # CS estimates
   cs_estimates_census()
@@ -1322,11 +1329,15 @@ main = function(){
   cs_estimates_census(CONTROLS)
   cs_estimates_grundtvig(CONTROLS)
 
+  time_cs = time_passed(time_twfe, "CS: ")
+
   # TSLS estimates
   tsls_regressions_census()
   tsls_regressions_grundtvig()
   tsls_regressions_census(CONTROLS)
   tsls_regressions_grundtvig(CONTROLS)
+
+  time_tsls = time_passed(time_cs, "TSLS: ")
 
   # Reduced form OLS
   reduced_form_regressions_census()
@@ -1334,11 +1345,15 @@ main = function(){
   reduced_form_regressions_census(CONTROLS)
   reduced_form_regressions_grundtvig(CONTROLS)
 
+  time_reduced_form = time_passed(time_tsls, "Reduced form: ")
+
   # Reduced form CS
-  reduced_form_cs_regressions_census()
-  reduced_form_cs_regressions_grundtvig()
-  reduced_form_cs_regressions_census(CONTROLS)
-  reduced_form_cs_regressions_grundtvig(CONTROLS)
+  cs_reduced_form_regressions_census()
+  cs_reduced_form_regressions_grundtvig()
+  cs_reduced_form_regressions_census(CONTROLS)
+  cs_reduced_form_regressions_grundtvig(CONTROLS)
+
+  time_reduced_form_cs = time_passed(time_reduced_form, "Reduced form CS: ")
 }
 
-# main()
+main()

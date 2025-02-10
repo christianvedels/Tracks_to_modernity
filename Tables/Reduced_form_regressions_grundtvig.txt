@@ -1,0 +1,22 @@
+\begingroup
+\centering
+\begin{tabular}{lcc}
+   \tabularnewline \midrule \midrule
+   Dependent Variables: & Assembly\_house  & HighSchool\\  
+   Model:               & (1)              & (2)\\  
+   \midrule
+   \emph{Variables}\\
+   Connected\_lcp       & 0.0542$^{*}$     & -0.0048\\   
+                        & (0.0324)         & (0.0144)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   GIS\_ID              & Yes              & Yes\\  
+   Year                 & Yes              & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations         & 76,890           & 76,890\\  
+   \midrule \midrule
+   \multicolumn{3}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
+   \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
