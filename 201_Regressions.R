@@ -287,7 +287,48 @@ grundtvig_distributions_over_time = function(){
 
   print(p1)
 
-  ggsave("Plots/Grundtvig_over_time.png", p1, width = 0.75*dims$width, height = 1.5*dims$height)
+  ggsave("Plots/Grundtvig_over_time.png", p1, width = dims$width, height = 1.25*dims$height)
+}
+
+# ==== Function to make plots of cs estimates ====
+save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1, ylab = NA, omit_legend = F){
+  for(i in seq(length(plots))){
+    p = plots[[i]]
+    print(p)
+    # Name based on controls or not
+    if(xformula == 1){
+      fname = paste("Plots/", name, "/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
+    } else {
+      fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
+    }
+
+    if(is.na(ylab)){
+      ylab = outcomeNames(outcome_names[i])
+    }
+
+    p = p + 
+      labs(
+        y = ylab,
+        x = "Year",
+        title = NULL
+      ) + 
+      theme_bw() + 
+      scale_x_continuous() + 
+      theme(
+        axis.text.x = element_text(angle = 90)
+      ) + 
+      scale_color_manual(values = c("1" = colours$red, "0" = colours$black), labels = c("0"="Not connected", "1"="Connected")) +
+      theme(legend.position = "bottom")
+      labs(
+        color = "Connected to railway:"
+      )
+
+    if(omit_legend){
+      p = p + theme(legend.position = "none")
+    }
+
+    ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
+  }
 }
 
 # ==== TWFE regressions (Census data) ====
@@ -534,41 +575,6 @@ cs_estimates_census = function(xformula = "1"){
   sink()
   print(res) # To display in console when running the script
 
-  # Function to save plots list
-  save_plots = function(plots, outcome_names, xformula, name = "Census"){
-    for(i in seq(length(plots))){
-      p = plots[[i]]
-      print(p)
-      # Name based on controls or not
-      if(xformula == 1){
-        fname = paste("Plots/", name, "/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      } else {
-        fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      }
-
-      p = p + 
-        labs(
-          y = outcomeNames(outcome_names[i]),
-          x = "Year",
-          title = NULL
-        ) + 
-        theme_bw() + 
-        scale_x_continuous() + 
-        theme(
-          axis.text.x = element_text(angle = 90)
-        ) + 
-        scale_color_manual(values = c("1" = colours$red, "0" = colours$black), labels = c("0"="Not connected", "1"="Connected")) +
-        theme(legend.position = "bottom")
-        labs(
-          color = "Connected to railway:"
-        )
-
-      ggsave(fname, p, width = dims$width, height = dims$height)
-
-      ggsave(fname, p, width = dims$width, height = dims$height)
-  }
-  }
-
   # Plots full
   plots_full = list(
     p1 = cs_mod1 %>% ggdid(),
@@ -602,7 +608,7 @@ cs_estimates_census = function(xformula = "1"){
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Census_full")
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Census_calendar")
+  save_plots(plots_calendar, outcome_names, xformula, name = "Census_calendar", mult = 0.3, ylab = "", omit_legend = T)
 }
 
 # ==== CS estimates (Grundtvig data) ====
@@ -692,38 +698,6 @@ cs_estimates_grundtvig = function(xformula = "1"){
   print(res)
   sink()
   print(res) # To display in console when running the script
-
-  # Function to save plots list
-  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig", mult = 1){
-    for(i in seq(length(plots))){
-      p = plots[[i]]
-      # print(p)
-      # Name based on controls or not
-      if(xformula == 1){
-        fname = paste("Plots/", name, "/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      } else {
-        fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      }
-      p = p + 
-        labs(
-          y = outcomeNames(outcome_names[i]),
-          x = "Year",
-          title = NULL
-        ) + 
-        theme_bw() + 
-        scale_x_continuous() + 
-        theme(
-          axis.text.x = element_text(angle = 90)
-        ) + 
-        scale_color_manual(values = c("1" = colours$red, "0" = colours$black), labels = c("0"="Not connected", "1"="Connected")) +
-        theme(legend.position = "bottom")
-        labs(
-          col = "Connected to railway:"
-        )
-
-      ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
-  }
-  }
 
   # Plots full
   plots_full = list(
@@ -1104,38 +1078,6 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
 
   print(res) # To display in console when running the script
 
-  save_plots = function(plots, outcome_names, xformula, name = "Census_reduced_form"){
-    for(i in seq(length(plots))){
-      p = plots[[i]]
-      print(p)
-      # Name based on controls or not
-      if(xformula == 1){
-        fname = paste("Plots/", name, "/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      } else {
-        fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      }
-
-      p = p + 
-        labs(
-          y = outcomeNames(outcome_names[i]),
-          x = "Year",
-          title = NULL
-        ) + 
-        theme_bw() + 
-        scale_x_continuous() + 
-        theme(
-          axis.text.x = element_text(angle = 90)
-        ) + 
-        scale_color_manual(values = c("1" = colours$red, "0" = colours$black), labels = c("0"="Not connected", "1"="Connected")) +
-        theme(legend.position = "bottom")
-        labs(
-          color = "Connected to railway:"
-        )
-
-      ggsave(fname, p, width = dims$width, height = dims$height)
-    }
-  }
-
   # Plots full
   plots_full = list(
     p1 = cs_mod1 %>% ggdid(),
@@ -1167,10 +1109,9 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
   )
 
   # Save plots
-  save_plots(plots_full, outcome_names, xformula, name = "Census_reduced_form_full")
+  save_plots(plots_full, outcome_names, xformula, name = "Census_reduced_form_full", mult = 10)
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_reduced_form_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Census_reduced_form_calendar")
-
+  save_plots(plots_calendar, outcome_names, xformula, name = "Census_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
 }
 
 
@@ -1257,38 +1198,6 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
 
   print(res) # To display in console when running the script
 
-  save_plots = function(plots, outcome_names, xformula, name = "Grundtvig_reduced_form", mult = 1){
-    for(i in seq(length(plots))){
-      p = plots[[i]]
-      print(p)
-      # Name based on controls or not
-      if(xformula == 1){
-        fname = paste("Plots/", name, "/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      } else {
-        fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
-      }
-
-      p = p + 
-        labs(
-          y = outcomeNames(outcome_names[i]),
-          x = "Year",
-          title = NULL
-        ) + 
-        theme_bw() + 
-        scale_x_continuous() + 
-        theme(
-          axis.text.x = element_text(angle = 90)
-        ) + 
-        scale_color_manual(values = c("1" = colours$red, "0" = colours$black), labels = c("0"="Not connected", "1"="Connected")) +
-        theme(legend.position = "bottom")
-        labs(
-          color = "Connected to railway:"
-        )
-
-      ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
-    }
-  }
-
   # Plots full
   plots_full = list(
     p1 = cs_mod1 %>% ggdid(),
@@ -1308,9 +1217,9 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
   )
 
   # Save plots
-  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full", mult = 10)
+  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full")
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_reduced_form_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar")
+  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
 }
 
 # ===== main ==== 
@@ -1366,4 +1275,4 @@ main = function(){
   time_reduced_form_cs = time_passed(time_reduced_form, "Reduced form CS: ")
 }
 
-main()
+# main()
