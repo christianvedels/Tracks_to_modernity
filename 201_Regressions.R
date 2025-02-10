@@ -181,10 +181,20 @@ summary_tables = function(){
 
 # ==== Densities ====
 census_distributions = function(){
-  p1 = census %>%
+  tmp = census %>%
     group_by(GIS_ID) %>%
     mutate(Ever_rail = case_when(mean(Connected_railway) > 0 ~ "Yes", TRUE ~ "No")) %>%
-    filter(Year == 1850, Connected_railway == 0) %>%  # Exclude parishes with railways already
+    filter(Year == 1850)
+  
+  already_connected = tmp$Connected_railway %>% sum()
+  total_parishes = nrow(tmp)
+  sink("Tables/Note_connected.txt")
+  cat("Number of parishes already connected to the railway in 1850: ", already_connected, "of", total_parishes, "\n")
+  sink()
+  cat("Number of parishes already connected to the railway in 1850: ", already_connected, "of", total_parishes, "\n")
+
+  p1 = tmp %>%
+    filter(Connected_railway == 0) %>%   # Exclude parishes with railways already 
     mutate(
       lnpop1801 = log(Pop1801)
     ) %>%
@@ -325,7 +335,7 @@ twfe_regressions_census = function(xformula = "1"){
   )
 
   res = etable(twfe1, twfe2, twfe3, twfe4, twfe5, twfe6,
-       fitstat = ~ n,  # number of observations
+       fitstat = ~ n + my,  # number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
@@ -365,7 +375,7 @@ twfe_regressions_grundtvig = function(xformula = "1"){
   )
 
   res = etable(twfe1, twfe2,
-       fitstat = ~ n,  # Include number of observations
+       fitstat = ~ n + my,  # Include number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
@@ -784,7 +794,7 @@ tsls_regressions_census = function(xformula = "1"){
   )
 
   res = etable(tsls1, tsls2, tsls3, tsls4, tsls5, tsls6,
-       fitstat = ~ n,  # Number of observations
+       fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
@@ -832,7 +842,7 @@ tsls_regressions_grundtvig = function(xformula = "1"){
   )
 
   res = etable(tsls1, tsls2,
-       fitstat = ~ n,  # Number of observations
+       fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
@@ -908,7 +918,7 @@ reduced_form_regressions_census = function(xformula = "1"){
   )
 
   res = etable(twfe1_red, twfe2_red, twfe3_red, twfe4_red, twfe5_red, twfe6_red,
-       fitstat = ~ n,  # Number of observations
+       fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
@@ -946,7 +956,7 @@ reduced_form_regressions_grundtvig = function(xformula = "1"){
   )
 
   res = etable(twfe1_red, twfe2_red,
-       fitstat = ~ n,  # Number of observations
+       fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
        tex = TRUE,
