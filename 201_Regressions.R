@@ -624,6 +624,18 @@ cs_estimates_census = function(xformula = "1"){
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_calendar", mult = 0.3, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Census_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
+  
+  # # Custom aggregation
+  # groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
+  # plots_custom = list(
+  #   p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
+  #   p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom(),
+  #   p3 = custom_aggregate(cs_mod3, groups = groups) %>% ggdid_custom(),
+  #   p4 = custom_aggregate(cs_mod4, groups = groups) %>% ggdid_custom(),
+  #   p5 = custom_aggregate(cs_mod5, groups = groups) %>% ggdid_custom(),
+  #   p6 = custom_aggregate(cs_mod6, groups = groups) %>% ggdid_custom()
+  # )
+  # save_plots(plots_custom, outcome_names, xformula, name = "Census_custom", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== CS estimates (Grundtvig data) ====
@@ -743,6 +755,14 @@ cs_estimates_grundtvig = function(xformula = "1"){
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar", mult = 0.5, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
+  
+  # Custom aggregation
+  groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
+  plots_custom = list(
+    p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
+    p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom()
+  )
+  save_plots(plots_custom, outcome_names, xformula, name = "Grundtvig_custom", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== TSLS regressions (Census data) ====
@@ -1145,8 +1165,19 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_reduced_form_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Census_reduced_form_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
+  
+  # Custom aggregation
+  # groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
+  # plots_custom = list(
+  #   p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
+  #   p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom(),
+  #   p3 = custom_aggregate(cs_mod3, groups = groups) %>% ggdid_custom(),
+  #   p4 = custom_aggregate(cs_mod4, groups = groups) %>% ggdid_custom(),
+  #   p5 = custom_aggregate(cs_mod5, groups = groups) %>% ggdid_custom(),
+  #   p6 = custom_aggregate(cs_mod6, groups = groups) %>% ggdid_custom()
+  # )
+  # save_plots(plots_custom, outcome_names, xformula, name = "Census_reduced_form_custom", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
-
 
 # ==== Reduced form regressions cs (Grundtvig data) ====
 cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
@@ -1155,7 +1186,7 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     tname = "Year_num",             # Time variable
     idname = "GIS_ID_num",          # Unit identifier
     gname = "Treat_year_instr",       # First year of treatment
-    xformla = as.formula(paste("~", xformula)),              # No covariates 
+    xformla = as.formula(paste("~", xformula)),
     data = grundtvig_cs,              # Your dataset
     clustervars = "GIS_ID"      # Cluster variable
   )
@@ -1165,7 +1196,7 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     tname = "Year_num",             # Time variable
     idname = "GIS_ID_num",          # Unit identifier
     gname = "Treat_year_instr",       # First year of treatment
-    xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
+    xformla = as.formula(paste("~", xformula)),
     data = grundtvig_cs,              # Your dataset
     clustervars = "GIS_ID"      # Cluster variable
   )
@@ -1255,11 +1286,19 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid()
   )
 
+  # Custom aggregation
+  groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
+  plots_custom = list(
+    p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
+    p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom()
+  )
+
   # Save plots
   save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_reduced_form_full")
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_reduced_form_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar", mult = 0.5, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_reduced_form_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
+  save_plots(plots_custom, outcome_names, xformula, name = "Grundtvig_reduced_form_custom", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ===== main ==== 
@@ -1315,4 +1354,4 @@ main = function(){
   time_reduced_form_cs = time_passed(time_reduced_form, "Reduced form CS: ")
 }
 
-# main()
+main()
