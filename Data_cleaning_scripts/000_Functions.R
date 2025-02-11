@@ -517,6 +517,56 @@ time_passed = function(time0, category = ""){
     " hours)\n"
   )
   cat(to_print)
-  
+
   return(time1)
+}
+
+
+# ==== Custom aggregation ====
+custom_aggregate = function(x, groups = list(1840:1860, 1861:1880, 1881:1900, 1901:1920)){
+  warning("This function (custom aggregate) is a work in progress")
+  group_labels = sapply(groups, function(g) paste0(min(g), "-", max(g)))
+
+  tmp_funky = function(t){
+    for(i in 1:length(groups)){
+      if(t %in% groups[[i]]){
+        return(group_labels[i])
+      }
+    }
+  }
+  
+  summary = data.frame(att = x$att, t = x$t) %>%
+    rowwise() %>%
+    # Check if t is in group
+    mutate(
+      group = tmp_funky(t)
+    ) %>%
+    group_by(group) %>%
+    summarise(
+      se_ish = sd(att)/sqrt(NROW(att)),
+      aggte = mean(att)      
+    )
+  
+}
+
+ggdid_custom = function(x){
+  warning("This function (ggdid_custom) is a work in progress")
+  p = x %>%
+    ggplot(aes(x = aggte, y = group)) +
+    geom_point(col = colours$red) +
+    geom_errorbarh(
+      col = colours$red,
+      aes(xmin = aggte - 1.96*se_ish,
+          xmax = aggte + 1.96*se_ish,
+          width = 0.2
+      )
+    ) +
+    geom_vline(xintercept = 0) +
+    theme_bw() + 
+    labs(
+      x = "Effect\nNOTE: Take SE with a grain of salt",
+      y = "Group"
+    )
+  
+  return(p)
 }
