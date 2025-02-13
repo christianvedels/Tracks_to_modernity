@@ -264,6 +264,16 @@ grundtvig = grundtvig %>%
   ) %>%
   ungroup()
 
+# Create treat years for broader groups 
+grundtvig = grundtvig %>% 
+  mutate(
+    decade = as.numeric(substr(Year, 1, 3)) * 10
+  ) %>%
+  mutate(
+    Treat_year_broad = min_treat_year(decade, RailAccess),
+    Treat_year_instr_broad = min_treat_year(decade, LCPAccess)
+  )
+
 # Redefine Assembly_house and High School as a dummy
 grundtvig = grundtvig %>%
   mutate(
