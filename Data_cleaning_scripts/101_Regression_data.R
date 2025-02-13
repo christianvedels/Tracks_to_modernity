@@ -266,13 +266,15 @@ grundtvig = grundtvig %>%
 
 # Create treat years for broader groups 
 grundtvig = grundtvig %>% 
+  group_by(GIS_ID) %>%
   mutate(
     decade = as.numeric(substr(Year, 1, 3)) * 10
   ) %>%
   mutate(
     Treat_year_broad = min_treat_year(decade, RailAccess),
     Treat_year_instr_broad = min_treat_year(decade, LCPAccess)
-  )
+  ) %>%
+  ungroup()
 
 # Redefine Assembly_house and High School as a dummy
 grundtvig = grundtvig %>%
