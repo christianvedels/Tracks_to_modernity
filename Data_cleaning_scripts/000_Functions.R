@@ -229,20 +229,22 @@ calc_rail = function(shape,
         layer_spatial(data = shape_y) +
         theme_bw() +
         labs(
-          title = paste0("Year ", y),
-          subtitle = paste0(
-            parishes_covered,
-            " of ",
-            NROW(shape_parishes),
-            " parishes covered (",
-            pretty_pct(parishes_covered / NROW(shape_parishes)),
-            ")"
-          ),
-          caption = "Data from Fertner (2013)",
+          # title = paste0("Year ", y),
+          # subtitle = paste0(
+          #   parishes_covered,
+          #   " of ",
+          #   NROW(shape_parishes),
+          #   " parishes covered (",
+          #   pretty_pct(parishes_covered / NROW(shape_parishes)),
+          #   ")"
+          # ),
+          # caption = "Data from Fertner (2013)",
           col = "Parish connected:",
           fill = "Parish connected:"
         ) +
-        theme(legend.position = "bottom")
+        theme(legend.position = "bottom") + 
+        scale_colour_manual(values = c("Yes"=colours$red, "No" = "grey")) + 
+        scale_fill_manual(values = c("Yes"=colours$red, "No" = "grey"))
       
       # Distance to rail
       p2 = ggplot() +
