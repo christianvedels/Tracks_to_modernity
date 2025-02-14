@@ -2,19 +2,20 @@
 \centering
 \begin{tabular}{lcccccc}
    \tabularnewline \midrule \midrule
-   Dependent Variables: & lnPopulation   & lnChild\_women\_ratio   & lnManufacturing & lnNotAgriculture & HISCAM\_avg   & lnMigration\\  
-   Model:               & (1)            & (2)                     & (3)             & (4)              & (5)           & (6)\\  
+   Dependent Variables:    & lnPopulation   & lnChild\_women\_ratio   & lnManufacturing & lnNotAgriculture & HISCAM\_avg   & lnMigration\\  
+   Model:                  & (1)            & (2)                     & (3)             & (4)              & (5)           & (6)\\  
    \midrule
    \emph{Variables}\\
-   Connected\_lcp       & 0.0614$^{***}$ & 0.0052                  & 0.0464          & 0.0394           & 0.2737$^{**}$ & 0.0592\\   
-                        & (0.0236)       & (0.0070)                & (0.0434)        & (0.0435)         & (0.1393)      & (0.0814)\\   
+   Connected\_lcp          & 0.0614$^{***}$ & 0.0052                  & 0.0464          & 0.0394           & 0.2737$^{**}$ & 0.0592\\   
+                           & (0.0236)       & (0.0070)                & (0.0434)        & (0.0435)         & (0.1393)      & (0.0814)\\   
    \midrule
    \emph{Fixed-effects}\\
-   GIS\_ID              & Yes            & Yes                     & Yes             & Yes              & Yes           & Yes\\  
-   Year                 & Yes            & Yes                     & Yes             & Yes              & Yes           & Yes\\  
+   GIS\_ID                 & Yes            & Yes                     & Yes             & Yes              & Yes           & Yes\\  
+   Year                    & Yes            & Yes                     & Yes             & Yes              & Yes           & Yes\\  
    \midrule
    \emph{Fit statistics}\\
-   Observations         & 3,584          & 3,574                   & 3,584           & 3,584            & 3,584         & 3,584\\  
+   Observations            & 3,584          & 3,574                   & 3,584           & 3,584            & 3,584         & 3,584\\  
+   Dependent variable mean & 6.3974         & 0.39743                 & 4.0898          & 4.3981           & 48.596        & 4.3618\\  
    \midrule \midrule
    \multicolumn{7}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
    \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\

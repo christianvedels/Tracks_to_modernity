@@ -1,6 +1,6 @@
 # Regressions
 #
-# Date updated:   2025-01-21
+# Date updated:   2025-02-13
 # Author:         Christian Vedel, Tom Görges
 # Purpose:        Runs regressions
 
@@ -31,6 +31,22 @@ grundtvig = grundtvig %>% rename(
   Connected_lcp = LCPAccess
 )
 
+# Only same GIS_IDs
+census = census %>% filter(GIS_ID %in% grundtvig$GIS_ID)
+grundtvig = grundtvig %>% filter(GIS_ID %in% census$GIS_ID)
+
+# Zeros are NAs in MA
+grundtvig = grundtvig %>% mutate(
+  MA_assembly = case_when(
+    is.na(MA_assembly) ~ 0,
+    TRUE ~ MA_assembly
+  ),
+  MA_folkhigh = case_when(
+    is.na(MA_folkhigh) ~ 0,
+    TRUE ~ MA_folkhigh
+  )
+)
+
 # Outcome names 
 outcomeNames = function(x){
   case_when(
@@ -55,6 +71,8 @@ outcomeNames_grundtvig = function(x){
   case_when(
     x == "Assembly_house" ~ "Assembly house",
     x == "HighSchool" ~ "Folk high school",
+    x == "MA_assembly" ~ "Density Assembly houses (MA)",
+    x == "MA_folkhigh" ~ "Density Folk high schools (MA)",
     TRUE ~ x
   )
 }
@@ -77,6 +95,10 @@ census_iv = census %>%
 # create grundtvig_iv
 grundtvig_iv = grundtvig %>%
   filter(away_from_node == 1)
+
+# Grundtvig decade
+grundtvig_decade = grundtvig %>%
+  filter(Year < 1920) # Only one year included
 
 # === Summary Statistics ===
 summary_tables = function(){
@@ -122,6 +144,8 @@ summary_tables = function(){
     select(
       Assembly_house,
       HighSchool,
+      MA_assembly,
+      MA_folkhigh,
       Connected_railway,
       Connected_lcp
     ) %>%
@@ -129,6 +153,8 @@ summary_tables = function(){
       cols = c(
         Assembly_house,
         HighSchool,
+        MA_assembly,
+        MA_folkhigh,
         Connected_railway,
         Connected_lcp
       ),
@@ -138,6 +164,8 @@ summary_tables = function(){
       var = case_when(
         var == "Assembly_house" ~ "Share of parishes with an assembly house",
         var == "HighSchool" ~ "Share of parishes with a folk high school",
+        var == "MA_assembly" ~ "Local density of assembly houses (MA)",
+        var == "MA_folkhigh" ~ "Local density of folk high schools (MA)",
         TRUE ~ var
       )
     ) %>%
@@ -168,9 +196,9 @@ summary_tables = function(){
     ) %>%
     kable_styling(
       latex_options = c("hold_position", "scale_down")
-    ) %>%
-    group_rows("A. Economy", 1, NROW(sum_table_census)) %>%
-    group_rows("B. Grundtvig", NROW(sum_table_census) + 1, NROW(summary_stats))
+    )# %>%
+    # group_rows("A. Economy", 1, NROW(sum_table_census)) %>%
+    # group_rows("B. Grundtvig", NROW(sum_table_census) + 1, NROW(summary_stats))
 
   sink("Tables/Summary_Statistics.txt")
   print(sum_tex)
@@ -268,7 +296,7 @@ grundtvig_distributions_over_time = function(){
     mutate(
       var = case_when(
         var == "Assembly_house" ~ "Share of parishes with an assembly house",
-        var == "HighSchool" ~ "Share of parishes with a folk high school",
+        var == "HighSchool" ~ "Share of parishes with a folk high school"
       )
     ) %>%
     group_by(var, Year, Ever_rail) %>%
@@ -331,6 +359,8 @@ save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1,
       p = p + theme(legend.position = "none")
     }
 
+    # Create dir
+    dir.create(dirname(fname), showWarnings = FALSE)
     ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
   }
 }
@@ -419,7 +449,21 @@ twfe_regressions_grundtvig = function(xformula = "1"){
     cluster = ~ GIS_ID
   )
 
-  res = etable(twfe1, twfe2,
+  form3 = as.formula(paste("MA_assembly ~ Connected_railway | GIS_ID + Year +", xformula))
+  twfe3 = feols(
+    form3,
+    data = grundtvig,
+    cluster = ~ GIS_ID
+  )
+
+  form4 = as.formula(paste("MA_folkhigh ~ Connected_railway | GIS_ID + Year +", xformula))
+  twfe4 = feols(
+    form4,
+    data = grundtvig,
+    cluster = ~ GIS_ID
+  )
+
+  res = etable(twfe1, twfe2, twfe3, twfe4,
        fitstat = ~ n + my,  # Include number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
@@ -446,13 +490,14 @@ twfe_regressions_grundtvig = function(xformula = "1"){
 cs_estimates_census = function(xformula = "1"){
   # log(Pop)
   cs_mod1 = att_gt(
-    yname = "lnPopulation",          # Outcome variable
-    tname = "Year_num",             # Time variable
-    idname = "GIS_ID_num",          # Unit identifier
-    gname = "Treat_year",       # First year of treatment
-    xformla = as.formula(paste("~", xformula)),  # Any covariates 
-    data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    yname = "lnPopulation",    
+    tname = "Year_num",        
+    idname = "GIS_ID_num",     
+    gname = "Treat_year",      
+    xformla = as.formula(paste("~", xformula)), 
+    data = census,        
+    clustervars = "GIS_ID",
+    control_group = "notyettreated"
   )
 
   # Child-woman ratio
@@ -463,7 +508,8 @@ cs_estimates_census = function(xformula = "1"){
     gname = "Treat_year",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),     
     data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   # log Manufacturing
@@ -474,7 +520,8 @@ cs_estimates_census = function(xformula = "1"){
     gname = "Treat_year",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),            
     data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   # log Manufacturing
@@ -485,7 +532,8 @@ cs_estimates_census = function(xformula = "1"){
     gname = "Treat_year",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),              
     data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   # HISCAM_avg
@@ -496,7 +544,8 @@ cs_estimates_census = function(xformula = "1"){
     gname = "Treat_year",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),              
     data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   # Migration
@@ -507,7 +556,8 @@ cs_estimates_census = function(xformula = "1"){
     gname = "Treat_year",       # First (observed) year of treatment
     xformla = as.formula(paste("~", xformula)),      
     data = census,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   # Aggregate the ATT
@@ -529,12 +579,7 @@ cs_estimates_census = function(xformula = "1"){
   res = extract_res(simple_sum_res) %>%
     mutate(
       # Stars
-      Estimate = case_when(
-        p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "***"),
-        p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "**"),
-        p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "*"),
-        TRUE ~ paste0(signif0(Estimate, NSIGNIF))
-      )
+      Estimate = stars(Estimate, p, NSIGNIF)
     ) %>%
     mutate(
       SE = paste0("(", signif0(SE, NSIGNIF), ")")
@@ -565,13 +610,79 @@ cs_estimates_census = function(xformula = "1"){
     row.names = F,
     align = "lcccccc",
     linesep = "",  # Suppress additional line spacing
-    format = "latex"
+    format = "latex",
+    escape = FALSE
   )
 
   if(xformula == 1){
     table_name = "CS_estimates_census"
   } else {
     table_name = "CS_estimates_census_controls"
+  }
+
+  sink(paste("Tables/", table_name, ".txt", sep = ""))
+  print(res)
+  sink()
+  print(res) # To display in console when running the script
+
+  # Group table
+  group_sum_res = list(
+    agg_mod1 = aggte(cs_mod1, type = "group", na.rm = T),
+    agg_mod2 = aggte(cs_mod2, type = "group", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "group", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "group", na.rm = T),
+    agg_mod5 = aggte(cs_mod5, type = "group", na.rm = T),
+    agg_mod6 = aggte(cs_mod6, type = "group", na.rm = T)
+  )
+
+  # Construct table
+  stat_order = c("Estimate", "SE", "n", "n_parishes", "mean_outcome")
+  res = extract_res(group_sum_res, grouped = TRUE) %>%
+    mutate(
+      # Stars
+      Estimate = stars(Estimate, p, NSIGNIF)
+    ) %>%
+    mutate(
+      SE = paste0("(", signif0(SE, NSIGNIF), ")")
+    ) %>%
+    mutate_all(signif0, digits = NSIGNIF) %>%
+    mutate_all(as.character) %>%
+    pivot_longer(cols = c("Estimate", "SE", "t", "p", "n", "n_parishes", "mean_outcome"), names_to = "stat") %>% 
+    pivot_wider(names_from = "outcome", values_from = "value") %>%
+    filter(stat %in% c("Estimate", "SE", "n", "n_parishes", "mean_outcome")) %>%
+    mutate(stat = factor(stat, levels = stat_order)) %>%
+    arrange(stat) %>%
+    mutate(
+      stat = case_when(
+        stat == "Estimate" ~ "Connected railway",
+        stat == "SE" ~ "",
+        stat == "n" ~ "N Obs.",
+        stat == "n_parishes" ~ "N parishes",
+        stat == "mean_outcome" ~ "Mean of Outcome"
+      )
+    ) %>%
+    mutate(
+      stat = ifelse(stat == "Connected railway", paste("Connected railway", group), stat)
+    ) %>%
+    select(-control_group, -group) %>%
+    rename(` ` = stat) %>%
+    distinct()
+
+  res = kable(
+    res,
+    booktabs = T, 
+    caption = "Railways and Local Development", 
+    row.names = F,
+    align = "lcccccc",
+    linesep = "",  # Suppress additional line spacing
+    format = "latex",
+    escape = FALSE
+  )
+
+  if(xformula == 1){
+    table_name = "CS_estimates_census_grouped"
+  } else {
+    table_name = "CS_estimates_census_grouped_controls"
   }
 
   sink(paste("Tables/", table_name, ".txt", sep = ""))
@@ -624,48 +735,283 @@ cs_estimates_census = function(xformula = "1"){
   save_plots(plots_dynamic, outcome_names, xformula, name = "Census_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_calendar", mult = 0.3, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Census_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
-  
-  # # Custom aggregation
-  # groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
-  # plots_custom = list(
-  #   p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
-  #   p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom(),
-  #   p3 = custom_aggregate(cs_mod3, groups = groups) %>% ggdid_custom(),
-  #   p4 = custom_aggregate(cs_mod4, groups = groups) %>% ggdid_custom(),
-  #   p5 = custom_aggregate(cs_mod5, groups = groups) %>% ggdid_custom(),
-  #   p6 = custom_aggregate(cs_mod6, groups = groups) %>% ggdid_custom()
-  # )
-  # save_plots(plots_custom, outcome_names, xformula, name = "Census_custom", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== CS estimates (Grundtvig data) ====
 cs_estimates_grundtvig = function(xformula = "1"){
   # Assembly house
   cs_mod1 = att_gt(
-    yname = "Assembly_house",          # Outcome variable
-    tname = "Year_num",             # Time variable
-    idname = "GIS_ID_num",          # Unit identifier
-    gname = "Treat_year",       # First year of treatment
-    xformla = as.formula(paste("~", xformula)),  # Any covariates 
-    data = grundtvig,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    yname = "Assembly_house",          
+    tname = "Year_num",             
+    idname = "GIS_ID_num",          
+    gname = "Treat_year",       
+    xformla = as.formula(paste("~", xformula)),  
+    data = grundtvig,              
+    clustervars = "GIS_ID",      
+    control_group = "notyettreated"
   )
 
   # HighSchool
   cs_mod2 = att_gt(
-    yname = "HighSchool",          # Outcome variable
-    tname = "Year_num",             # Time variable
-    idname = "GIS_ID_num",          # Unit identifier
-    gname = "Treat_year",       # First year of treatment
-    xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
-    data = grundtvig,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    yname = "HighSchool",          
+    tname = "Year_num",            
+    idname = "GIS_ID_num",         
+    gname = "Treat_year",       
+    xformla = as.formula(paste("~", xformula)), 
+    data = grundtvig,
+    clustervars = "GIS_ID",
+    control_group = "notyettreated"
+  )
+
+  cs_mod3 = att_gt(
+    yname = "MA_assembly",          
+    tname = "Year_num",            
+    idname = "GIS_ID_num",         
+    gname = "Treat_year",       
+    xformla = as.formula(paste("~", xformula)), 
+    data = grundtvig,
+    clustervars = "GIS_ID",
+    control_group = "notyettreated"
+  )
+
+  cs_mod4 = att_gt(
+    yname = "MA_folkhigh",          
+    tname = "Year_num",            
+    idname = "GIS_ID_num",         
+    gname = "Treat_year",       
+    xformla = as.formula(paste("~", xformula)), 
+    data = grundtvig,
+    clustervars = "GIS_ID",
+    control_group = "notyettreated"
   )
 
   # Aggregate the ATT
   simple_sum_res = list(
     agg_mod1 = aggte(cs_mod1, type = "simple", na.rm = T),
-    agg_mod2 = aggte(cs_mod2, type = "simple", na.rm = T)
+    agg_mod2 = aggte(cs_mod2, type = "simple", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "simple", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "simple", na.rm = T)
+  )
+
+  # Outcome names
+  outcome_names = lapply(simple_sum_res, function(x){
+    x$DIDparams$yname
+  }) %>% unlist() %>% outcomeNames_grundtvig
+
+  # Construct table
+  res = extract_res(simple_sum_res) %>%
+    mutate(
+      # Stars
+      Estimate = stars(Estimate, p, NSIGNIF)
+    ) %>%
+    mutate(
+      SE = paste0("(", signif0(SE, NSIGNIF), ")")
+    ) %>%
+    mutate_all(signif0, digits = NSIGNIF) %>%
+    mutate_all(as.character) %>%
+    pivot_longer(cols = c("Estimate", "SE", "t", "p", "n", "n_parishes", "mean_outcome"), names_to = "stat") %>% 
+    mutate(outcome = outcomeNames_grundtvig(outcome)) %>%
+    pivot_wider(names_from = "outcome", values_from = "value") %>% 
+    filter(stat %in% c("Estimate", "SE", "n", "n_parishes", "mean_outcome")) %>% 
+    mutate(
+      stat = case_when(
+        stat == "Estimate" ~ "Connected railway",
+        stat == "SE" ~ "",
+        stat == "n" ~ "N Obs.",
+        stat == "n_parishes" ~ "N parishes",
+        stat == "mean_outcome" ~ "Mean of Outcome"
+      )
+    ) %>% 
+    select(-control_group) %>% 
+    rename(` ` = stat)
+
+  # Tex table
+  res = kable(
+    res,
+    booktabs = T, 
+    caption = "Railways and Grundtvigianism", 
+    row.names = F,
+    align = "lcccccc",
+    linesep = "",  # Suppress additional line spacing
+    format = "latex",
+    escape = FALSE
+  )
+
+  if(xformula == 1){
+    table_name = "CS_estimates_grundtvig"
+  } else {
+    table_name = "CS_estimates_grundtvig_controls"
+  }
+
+  sink(paste("Tables/", table_name, ".txt", sep = ""))
+  print(res)
+  sink()
+  print(res) # To display in console when running the script
+
+  # Group table
+  group_sum_res = list(
+    agg_mod1 = aggte(cs_mod1, type = "group", na.rm = T),
+    agg_mod2 = aggte(cs_mod2, type = "group", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "group", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "group", na.rm = T)
+  )
+
+  # Construct table
+  stat_order = c("Estimate", "SE", "n", "n_parishes", "mean_outcome")
+  res = extract_res(group_sum_res, grouped = TRUE) %>%
+    mutate(
+      # Stars
+      Estimate = stars(Estimate, p, NSIGNIF)
+    ) %>%
+    mutate(
+      SE = paste0("(", signif0(SE, NSIGNIF), ")")
+    ) %>%
+    mutate_all(signif0, digits = NSIGNIF) %>%
+    mutate_all(as.character) %>%
+    pivot_longer(cols = c("Estimate", "SE", "t", "p", "n", "n_parishes", "mean_outcome"), names_to = "stat") %>% 
+    pivot_wider(names_from = "outcome", values_from = "value") %>%
+    filter(stat %in% c("Estimate", "SE", "n", "n_parishes", "mean_outcome")) %>%
+    mutate(stat = factor(stat, levels = stat_order)) %>%
+    arrange(stat) %>%
+    mutate(
+      stat = case_when(
+        stat == "Estimate" ~ "Connected railway",
+        stat == "SE" ~ "",
+        stat == "n" ~ "N Obs.",
+        stat == "n_parishes" ~ "N parishes",
+        stat == "mean_outcome" ~ "Mean of Outcome"
+      )
+    ) %>%
+    mutate(
+      stat = ifelse(stat == "Connected railway", paste("Connected railway", group), stat)
+    ) %>%
+    select(-control_group, -group) %>%
+    rename(` ` = stat) %>%
+    distinct()
+
+  res = kable(
+    res,
+    booktabs = T, 
+    caption = "Railways and Local Development", 
+    row.names = F,
+    align = "lcccccc",
+    linesep = "",  # Suppress additional line spacing
+    format = "latex",
+    escape = FALSE
+  )
+
+  if(xformula == 1){
+    table_name = "CS_estimates_grundtvig_grouped"
+  } else {
+    table_name = "CS_estimates_grundtvig_grouped_controls"
+  }
+
+  sink(paste("Tables/", table_name, ".txt", sep = ""))
+  print(res)
+  sink()
+  print(res) # To display in console when running the script
+
+  # Plots full
+  plots_full = list(
+    p1 = cs_mod1 %>% ggdid(),
+    p2 = cs_mod2 %>% ggdid(),
+    p3 = cs_mod3 %>% ggdid(),
+    p4 = cs_mod4 %>% ggdid()
+  )
+  
+  # Plots dynamic
+  plots_dynamic = list(
+    p1 = aggte(cs_mod1, type = "dynamic", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "dynamic", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "dynamic", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "dynamic", na.rm = T) %>% ggdid()
+  )
+
+  # Plots calendar
+  plots_calendar = list(
+    p1 = aggte(cs_mod1, type = "calendar", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "calendar", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "calendar", na.rm = T) %>% ggdid()
+  )
+
+  # Plots group
+  plots_group = list(
+    p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "group", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "group", na.rm = T) %>% ggdid()
+  )
+
+  # Save plots
+  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_full", mult = 10)
+  save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_dynamic")
+  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar", mult = 0.5, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
+  
+  
+}
+
+# ==== cs estimates by decade (grundtvig) ====
+cs_estimates_grundtvig_decade = function(xformula = "1"){
+  # Assembly house
+  cs_mod1 = att_gt(
+    yname = "Assembly_house",
+    tname = "decade", # MA_folkhigh  
+    idname = "GIS_ID_num",      
+    gname = "Treat_year_broad",       
+    xformla = as.formula(paste("~", xformula)),
+    data = grundtvig_decade,
+    clustervars = "GIS_ID",
+    panel = FALSE, # Repeated cross seciton of ~10 observations per parish per decade
+    control_group = "notyettreated"
+  )
+
+  # HighSchool
+  cs_mod2 = att_gt(
+    yname = "HighSchool", 
+    tname = "decade",             
+    idname = "GIS_ID_num",          
+    gname = "Treat_year_broad",       
+    xformla = as.formula(paste("~", xformula)),               
+    data = grundtvig_decade,              
+    clustervars = "GIS_ID",
+    panel = FALSE, # Repeated cross seciton of ~10 observations per parish per decade
+    control_group = "notyettreated"
+  )
+
+  # Assembly house
+  cs_mod3 = att_gt(
+    yname = "MA_assembly", 
+    tname = "decade", # MA_folkhigh  
+    idname = "GIS_ID_num",      
+    gname = "Treat_year_broad",       
+    xformla = as.formula(paste("~", xformula)),
+    data = grundtvig_decade,
+    clustervars = "GIS_ID",
+    panel = FALSE, # Repeated cross seciton of ~10 observations per parish per decade
+    control_group = "notyettreated"
+  )
+
+  # HighSchool
+  cs_mod4 = att_gt(
+    yname = "MA_folkhigh", 
+    tname = "decade",             
+    idname = "GIS_ID_num",          
+    gname = "Treat_year_broad",       
+    xformla = as.formula(paste("~", xformula)),               
+    data = grundtvig_decade,              
+    clustervars = "GIS_ID",
+    panel = FALSE, # Repeated cross seciton of ~10 observations per parish per decade
+    control_group = "notyettreated"
+  )
+
+  # Aggregate the ATT
+  simple_sum_res = list(
+    agg_mod1 = aggte(cs_mod1, type = "simple", na.rm = T),
+    agg_mod2 = aggte(cs_mod2, type = "simple", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "simple", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "simple", na.rm = T)
   )
 
   # Outcome names
@@ -677,12 +1023,7 @@ cs_estimates_grundtvig = function(xformula = "1"){
   res = extract_res(simple_sum_res) %>%
     mutate(
       # Stars
-      Estimate = case_when(
-        p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "***"),
-        p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "**"),
-        p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "*"),
-        TRUE ~ paste0(signif0(Estimate, NSIGNIF))
-      )
+      Estimate = stars(Estimate, p, NSIGNIF)
     ) %>%
     mutate(
       SE = paste0("(", signif0(SE, NSIGNIF), ")")
@@ -712,13 +1053,77 @@ cs_estimates_grundtvig = function(xformula = "1"){
     row.names = F,
     align = "lcccccc",
     linesep = "",  # Suppress additional line spacing
-    format = "latex"
+    format = "latex",
+    escape = FALSE
   )
 
   if(xformula == 1){
-    table_name = "CS_estimates_grundtvig"
+    table_name = "CS_estimates_grundtvig_decade"
   } else {
-    table_name = "CS_estimates_grundtvig_controls"
+    table_name = "CS_estimates_grundtvig_decade_controls"
+  }
+
+  sink(paste("Tables/", table_name, ".txt", sep = ""))
+  print(res)
+  sink()
+  print(res) # To display in console when running the script
+
+  # Group table
+  group_sum_res = list(
+    agg_mod1 = aggte(cs_mod1, type = "group", na.rm = T),
+    agg_mod2 = aggte(cs_mod2, type = "group", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "group", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "group", na.rm = T)
+  )
+
+  # Construct table
+  stat_order = c("Estimate", "SE", "n", "n_parishes", "mean_outcome")
+  res = extract_res(group_sum_res, grouped = TRUE) %>%
+    mutate(
+      # Stars
+      Estimate = stars(Estimate, p, NSIGNIF)
+    ) %>%
+    mutate(
+      SE = paste0("(", signif0(SE, NSIGNIF), ")")
+    ) %>%
+    mutate_all(signif0, digits = NSIGNIF) %>%
+    mutate_all(as.character) %>%
+    pivot_longer(cols = c("Estimate", "SE", "t", "p", "n", "n_parishes", "mean_outcome"), names_to = "stat") %>% 
+    pivot_wider(names_from = "outcome", values_from = "value") %>%
+    filter(stat %in% c("Estimate", "SE", "n", "n_parishes", "mean_outcome")) %>%
+    mutate(stat = factor(stat, levels = stat_order)) %>%
+    arrange(stat, group) %>%
+    mutate(
+      stat = case_when(
+        stat == "Estimate" ~ "Connected railway",
+        stat == "SE" ~ "",
+        stat == "n" ~ "N Obs.",
+        stat == "n_parishes" ~ "N parishes",
+        stat == "mean_outcome" ~ "Mean of Outcome"
+      )
+    ) %>%
+    mutate(
+      stat = ifelse(stat == "Connected railway", paste("Connected railway", group), stat)
+    ) %>%
+    select(-control_group, -group) %>%
+    rename(` ` = stat) %>%
+    distinct()
+
+  res = kable(
+    res,
+    booktabs = T, 
+    caption = "Railways and Local Development", 
+    row.names = F,
+    align = "lcccccc",
+    linesep = "",  # Suppress additional line spacing
+    format = "latex",
+    escape = FALSE
+  )
+
+  if(xformula == 1){
+    table_name = "CS_estimates_grundtvig_decade_grouped"
+  } else {
+    table_name = "CS_estimates_grundtvig_decade_grouped_controls"
   }
 
   sink(paste("Tables/", table_name, ".txt", sep = ""))
@@ -729,40 +1134,40 @@ cs_estimates_grundtvig = function(xformula = "1"){
   # Plots full
   plots_full = list(
     p1 = cs_mod1 %>% ggdid(),
-    p2 = cs_mod2 %>% ggdid()
+    p2 = cs_mod2 %>% ggdid(),
+    p3 = cs_mod3 %>% ggdid(),
+    p4 = cs_mod4 %>% ggdid()
   )
   
   # Plots dynamic
   plots_dynamic = list(
     p1 = aggte(cs_mod1, type = "dynamic", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "dynamic", na.rm = T) %>% ggdid()
+    p2 = aggte(cs_mod2, type = "dynamic", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "dynamic", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "dynamic", na.rm = T) %>% ggdid()
   )
 
   # Plots calendar
   plots_calendar = list(
     p1 = aggte(cs_mod1, type = "calendar", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid()
+    p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "calendar", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "calendar", na.rm = T) %>% ggdid()
   )
 
   # Plots group
   plots_group = list(
     p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid()
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "group", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "group", na.rm = T) %>% ggdid()
   )
 
   # Save plots
-  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_full", mult = 10)
-  save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_dynamic")
-  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_calendar", mult = 0.5, ylab = "", omit_legend = T)
-  save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
-  
-  # Custom aggregation
-  groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
-  plots_custom = list(
-    p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
-    p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom()
-  )
-  save_plots(plots_custom, outcome_names, xformula, name = "Grundtvig_custom", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
+  save_plots(plots_full, outcome_names, xformula, name = "Grundtvig_decade_full", mult = 1)
+  save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_decade_dynamic")
+  save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_decade_calendar", mult = 0.5, ylab = "", omit_legend = T)
+  save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_decade_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== TSLS regressions (Census data) ====
@@ -826,9 +1231,9 @@ tsls_regressions_census = function(xformula = "1"){
 
   # Tabel name depending on whether xformula is 1 or not
   if (xformula == "1") {
-    table_name = "TSLS_regressions_grundtvig"
+    table_name = "TSLS_regressions_census"
   } else {
-    table_name = "TSLS_regressions_grundtvig_controls"
+    table_name = "TSLS_regressions_census_controls"
   }
 
   sink(paste("Tables/", table_name, ".txt", sep = ""))
@@ -857,7 +1262,21 @@ tsls_regressions_grundtvig = function(xformula = "1"){
     cluster = ~ GIS_ID
   )
 
-  res = etable(tsls1, tsls2,
+  form3 = as.formula(paste("MA_assembly ~ 1 | GIS_ID + Year + ", xformula, "| Connected_railway ~ Connected_lcp"))
+  tsls3 = feols(
+    form3,
+    data = grundtvig_iv,
+    cluster = ~ GIS_ID
+  )
+
+  form4 = as.formula(paste("MA_folkhigh ~ 1 | GIS_ID + Year + ", xformula, "| Connected_railway ~ Connected_lcp"))
+  tsls4 = feols(
+    form4,
+    data = grundtvig_iv,
+    cluster = ~ GIS_ID
+  )
+
+  res = etable(tsls1, tsls2, tsls3, tsls4,
        fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
@@ -888,6 +1307,7 @@ tsls_regressions_grundtvig = function(xformula = "1"){
 
   print(res) # To display in console when running the script
 }
+
 
 # ==== Reduced form regressions (Census data) ====
 reduced_form_regressions_census = function(xformula = "1"){
@@ -971,7 +1391,21 @@ reduced_form_regressions_grundtvig = function(xformula = "1"){
     cluster = ~ GIS_ID
   )
 
-  res = etable(twfe1_red, twfe2_red,
+  form3 = as.formula(paste("MA_assembly ~ Connected_lcp | GIS_ID + Year + ", xformula))
+  twfe3_red = feols(
+    form3,
+    data = grundtvig_cs,
+    cluster = ~ GIS_ID
+  )
+
+  form4 = as.formula(paste("MA_folkhigh ~ Connected_lcp | GIS_ID + Year + ", xformula))
+  twfe4_red = feols(
+    form4,
+    data = grundtvig_cs,
+    cluster = ~ GIS_ID
+  )
+  
+  res = etable(twfe1_red, twfe2_red, twfe3_red, twfe4_red,
        fitstat = ~ n + my,  # Number of observations
        cluster = "GIS_ID", # Display the clustering
        signif.code = c("***" = 0.01, "**" = 0.05, "*" = 0.1), # Custom significance codes
@@ -1002,7 +1436,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),              # No covariates 
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod2 = att_gt(
@@ -1012,7 +1447,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod3 = att_gt(
@@ -1022,7 +1458,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),               # No covariates (consistent with TWFE)
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod4 = att_gt(
@@ -1032,7 +1469,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod5 = att_gt(
@@ -1042,7 +1480,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),             # No covariates (consistent with TWFE)
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod6 = att_gt(
@@ -1052,7 +1491,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     gname = "Treat_year_instr",       # First (observed) year of treatment
     xformla = as.formula(paste("~", xformula)),              # No covariates (consistent with TWFE)
     data = census_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   simple_sum_res = list(
@@ -1071,12 +1511,7 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
   res = extract_res(simple_sum_res) %>%
     mutate(
       # Stars
-      Estimate = case_when(
-        p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "***"),
-        p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "**"),
-        p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "*"),
-        TRUE ~ paste0(signif0(Estimate, NSIGNIF))
-      )
+      Estimate = stars(Estimate, p, NSIGNIF)
     ) %>%
     mutate(
       SE = paste0("(", signif0(SE, NSIGNIF), ")")
@@ -1105,7 +1540,8 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
     row.names = F,
     align = "lcccccc",
     linesep = "",  # Suppress additional line spacing
-    format = "latex"
+    format = "latex",
+    escape = FALSE
   )
 
   if(xformula == 1){
@@ -1166,17 +1602,6 @@ cs_reduced_form_regressions_census = function(xformula = "1"){
   save_plots(plots_calendar, outcome_names, xformula, name = "Census_reduced_form_calendar", mult = 0.3, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Census_reduced_form_group", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
   
-  # Custom aggregation
-  # groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
-  # plots_custom = list(
-  #   p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
-  #   p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom(),
-  #   p3 = custom_aggregate(cs_mod3, groups = groups) %>% ggdid_custom(),
-  #   p4 = custom_aggregate(cs_mod4, groups = groups) %>% ggdid_custom(),
-  #   p5 = custom_aggregate(cs_mod5, groups = groups) %>% ggdid_custom(),
-  #   p6 = custom_aggregate(cs_mod6, groups = groups) %>% ggdid_custom()
-  # )
-  # save_plots(plots_custom, outcome_names, xformula, name = "Census_reduced_form_custom", mult = 0.3, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ==== Reduced form regressions cs (Grundtvig data) ====
@@ -1188,22 +1613,48 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     gname = "Treat_year_instr",       # First year of treatment
     xformla = as.formula(paste("~", xformula)),
     data = grundtvig_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    clustervars = "GIS_ID",      # Cluster variable
+    control_group = "notyettreated"
   )
 
   cs_mod2 = att_gt(
-    yname = "HighSchool",          # Outcome variable
-    tname = "Year_num",             # Time variable
-    idname = "GIS_ID_num",          # Unit identifier
-    gname = "Treat_year_instr",       # First year of treatment
+    yname = "HighSchool",         
+    tname = "Year_num",           
+    idname = "GIS_ID_num",        
+    gname = "Treat_year_instr",   
     xformla = as.formula(paste("~", xformula)),
-    data = grundtvig_cs,              # Your dataset
-    clustervars = "GIS_ID"      # Cluster variable
+    data = grundtvig_cs,          
+    clustervars = "GIS_ID",      
+    control_group = "notyettreated"
+  )
+
+  cs_mod3 = att_gt(
+    yname = "MA_assembly",          
+    tname = "Year_num",             
+    idname = "GIS_ID_num",          
+    gname = "Treat_year_instr",     
+    xformla = as.formula(paste("~", xformula)),
+    data = grundtvig_cs,            
+    clustervars = "GIS_ID",      
+    control_group = "notyettreated"
+  )
+
+  cs_mod4 = att_gt(
+    yname = "MA_folkhigh",          
+    tname = "Year_num",             
+    idname = "GIS_ID_num",          
+    gname = "Treat_year_instr",     
+    xformla = as.formula(paste("~", xformula)),
+    data = grundtvig_cs,            
+    clustervars = "GIS_ID",      
+    control_group = "notyettreated"
   )
 
   simple_sum_res = list(
     agg_mod1 = aggte(cs_mod1, type = "simple", na.rm = T),
-    agg_mod2 = aggte(cs_mod2, type = "simple", na.rm = T)
+    agg_mod2 = aggte(cs_mod2, type = "simple", na.rm = T),
+    agg_mod3 = aggte(cs_mod3, type = "simple", na.rm = T),
+    agg_mod4 = aggte(cs_mod4, type = "simple", na.rm = T)
   )
 
   outcome_names = lapply(simple_sum_res, function(x){
@@ -1213,12 +1664,7 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
   res = extract_res(simple_sum_res) %>%
     mutate(
       # Stars
-      Estimate = case_when(
-        p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "***"),
-        p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "**"),
-        p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "*"),
-        TRUE ~ paste0(signif0(Estimate, NSIGNIF))
-      )
+      Estimate = stars(Estimate, p, NSIGNIF)
     ) %>%
     mutate(
       SE = paste0("(", signif0(SE, NSIGNIF), ")")
@@ -1247,7 +1693,8 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
     row.names = F,
     align = "lcccccc",
     linesep = "",  # Suppress additional line spacing
-    format = "latex"
+    format = "latex",
+    escape = FALSE
   )
 
   if(xformula == 1){
@@ -1265,32 +1712,33 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
   # Plots full
   plots_full = list(
     p1 = cs_mod1 %>% ggdid(),
-    p2 = cs_mod2 %>% ggdid()
+    p2 = cs_mod2 %>% ggdid(),
+    p3 = cs_mod3 %>% ggdid(),
+    p4 = cs_mod4 %>% ggdid()
   )
 
   # Plots dynamic
   plots_dynamic = list(
     p1 = aggte(cs_mod1, type = "dynamic", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "dynamic", na.rm = T) %>% ggdid()
+    p2 = aggte(cs_mod2, type = "dynamic", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "dynamic", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "dynamic", na.rm = T) %>% ggdid()
   )
 
   # Plots calendar
   plots_calendar = list(
     p1 = aggte(cs_mod1, type = "calendar", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid()
+    p2 = aggte(cs_mod2, type = "calendar", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "calendar", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "calendar", na.rm = T) %>% ggdid()
   )
 
   # Plots group
   plots_group = list(
     p1 = aggte(cs_mod1, type = "group", na.rm = T) %>% ggdid(),
-    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid()
-  )
-
-  # Custom aggregation
-  groups = list(1840:1849, 1850:1859, 1860:1869, 1870:1879, 1880:1889, 1890:1899, 1900:1909, 1910:1920)
-  plots_custom = list(
-    p1 = custom_aggregate(cs_mod1, groups = groups) %>% ggdid_custom(),
-    p2 = custom_aggregate(cs_mod2, groups = groups) %>% ggdid_custom()
+    p2 = aggte(cs_mod2, type = "group", na.rm = T) %>% ggdid(),
+    p3 = aggte(cs_mod3, type = "group", na.rm = T) %>% ggdid(),
+    p4 = aggte(cs_mod4, type = "group", na.rm = T) %>% ggdid()
   )
 
   # Save plots
@@ -1298,12 +1746,10 @@ cs_reduced_form_regressions_grundtvig = function(xformula = "1"){
   save_plots(plots_dynamic, outcome_names, xformula, name = "Grundtvig_reduced_form_dynamic")
   save_plots(plots_calendar, outcome_names, xformula, name = "Grundtvig_reduced_form_calendar", mult = 0.5, ylab = "", omit_legend = T)
   save_plots(plots_group, outcome_names, xformula, name = "Grundtvig_reduced_form_group", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
-  save_plots(plots_custom, outcome_names, xformula, name = "Grundtvig_reduced_form_custom", mult = 0.5, ylab = "Group", xlab = "Effect", omit_legend = T)
 }
 
 # ===== main ==== 
 main = function(){
-
   start_time = Sys.time()
 
   # Descipritve statistics:
@@ -1326,6 +1772,8 @@ main = function(){
   cs_estimates_grundtvig()
   cs_estimates_census(CONTROLS)
   cs_estimates_grundtvig(CONTROLS)
+  cs_estimates_grundtvig_decade()
+  # cs_estimates_grundtvig_decade(CONTROLS) # Does not converge
 
   time_cs = time_passed(time_twfe, "CS: ")
 
@@ -1352,6 +1800,9 @@ main = function(){
   cs_reduced_form_regressions_grundtvig(CONTROLS)
 
   time_reduced_form_cs = time_passed(time_reduced_form, "Reduced form CS: ")
+
+  time_passed(start_time, "Total time: ")
 }
 
 main()
+

@@ -268,7 +268,7 @@ grundtvig = grundtvig %>%
 grundtvig = grundtvig %>% 
   group_by(GIS_ID) %>%
   mutate(
-    decade = as.numeric(substr(Year, 1, 3)) * 10
+    decade = (Year %/% 10) * 10
   ) %>%
   mutate(
     Treat_year_broad = min_treat_year(decade, RailAccess),

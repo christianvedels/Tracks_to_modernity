@@ -7,22 +7,22 @@
 \toprule
 Variable & N & Mean & SD & Min & Max\\
 \midrule
-\addlinespace[0.3em]
-\multicolumn{6}{l}{\textbf{A. Economy}}\\
-\hspace{1em}Child\_women\_ratio & 6336 & 0.48830 & 0.1115 & 0.00 & 1.364\\
-\hspace{1em}Connected\_lcp & 6356 & 0.07536 & 0.2640 & 0.00 & 1.000\\
-\hspace{1em}Connected\_railway & 6356 & 0.17610 & 0.3809 & 0.00 & 1.000\\
-\hspace{1em}HISCAM\_avg & 6355 & 48.63000 & 1.5030 & 44.24 & 82.850\\
-\hspace{1em}Migration & 6356 & 263.20000 & 390.6000 & 0.00 & 4299.000\\
-\hspace{1em}Population & 6356 & 793.80000 & 590.5000 & 37.00 & 13090.000\\
-\hspace{1em}log(Manufacturing + 1) & 6356 & 4.16400 & 0.8498 & 0.00 & 7.941\\
-\hspace{1em}log(Not agriculture + 1) & 6356 & 4.47100 & 0.8548 & 0.00 & 8.148\\
-\addlinespace[0.3em]
-\multicolumn{6}{l}{\textbf{B. Grundtvig}}\\
-\hspace{1em}Connected\_lcp & 138600 & 0.09727 & 0.2963 & 0.00 & 1.000\\
-\hspace{1em}Connected\_railway & 138600 & 0.26310 & 0.4403 & 0.00 & 1.000\\
-\hspace{1em}Share of parishes with a folk high school & 138600 & 0.02942 & 0.1690 & 0.00 & 1.000\\
-\hspace{1em}Share of parishes with an assembly house & 138600 & 0.16120 & 0.3677 & 0.00 & 1.000\\
+Child\_women\_ratio & 6336 & 0.48830 & 0.1115 & 0.000000 & 1.364\\
+Connected\_lcp & 6356 & 0.07536 & 0.2640 & 0.000000 & 1.000\\
+Connected\_railway & 6356 & 0.17610 & 0.3809 & 0.000000 & 1.000\\
+HISCAM\_avg & 6355 & 48.63000 & 1.5030 & 44.240000 & 82.850\\
+Migration & 6356 & 263.20000 & 390.6000 & 0.000000 & 4299.000\\
+\addlinespace
+Population & 6356 & 793.80000 & 590.5000 & 37.000000 & 13090.000\\
+log(Manufacturing + 1) & 6356 & 4.16400 & 0.8498 & 0.000000 & 7.941\\
+log(Not agriculture + 1) & 6356 & 4.47100 & 0.8548 & 0.000000 & 8.148\\
+Connected\_lcp & 119200 & 0.10180 & 0.3024 & 0.000000 & 1.000\\
+Connected\_railway & 119200 & 0.25760 & 0.4373 & 0.000000 & 1.000\\
+\addlinespace
+Local density of assembly houses (MA) & 119200 & 4.46400 & 5.4040 & 0.000000 & 20.350\\
+Local density of folk high schools (MA) & 119200 & 0.70240 & 0.4257 & 0.005426 & 3.784\\
+Share of parishes with a folk high school & 119200 & 0.02945 & 0.1691 & 0.000000 & 1.000\\
+Share of parishes with an assembly house & 119200 & 0.17150 & 0.3769 & 0.000000 & 1.000\\
 \bottomrule
 \end{tabular}}
 \end{table}

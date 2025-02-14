@@ -2,15 +2,15 @@
 
 \caption{Railways and Grundtvigianism}
 \centering
-\begin{tabular}[t]{lcc}
+\begin{tabular}[t]{lcccc}
 \toprule
-  & Assembly\_house & HighSchool\\
+  & Assembly_house & HighSchool & MA_assembly & MA_folkhigh\\
 \midrule
-Connected railway & -0.05941 & 0.02521\\
- & (0.05709) & (0.02349)\\
-N Obs. & 76800 & 76800\\
-N parishes & 1024 & 1024\\
-Mean of Outcome & 0.152 & 0.02531\\
+Connected railway & -0.04862 & 0.02749 & -0.03081 & 0.01493\\
+ & (0.05389) & (0.02458) & (0.0712) & (0.02391)\\
+N Obs. & 67200 & 67200 & 67200 & 67200\\
+N parishes & 896 & 896 & 896 & 896\\
+Mean of Outcome & 0.1587 & 0.02536 & 4.451 & 0.6949\\
 \bottomrule
 \end{tabular}
 \end{table}

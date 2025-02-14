@@ -2,15 +2,15 @@
 
 \caption{Railways and Grundtvigianism}
 \centering
-\begin{tabular}[t]{lcc}
+\begin{tabular}[t]{lcccc}
 \toprule
-  & Assembly\_house & HighSchool\\
+  & Assembly house & Folk high school & Density Assembly houses (MA) & Density Folk high schools (MA)\\
 \midrule
-Connected railway & 0.003303 & 0.01898***\\
- & (0.01325) & (0.006038)\\
-N Obs. & 138500 & 138500\\
-N parishes & 1847 & 1847\\
-Mean of Outcome & 0.1612 & 0.02944\\
+Connected railway & -0.003269 & 0.01582$^{**}$ & 0.1198$^{*}$ & 0.0348$^{***}$\\
+ & (0.01358) & (0.006308) & (0.06559) & (0.00724)\\
+N Obs. & 119200 & 119200 & 119200 & 119200\\
+N parishes & 1589 & 1589 & 1589 & 1589\\
+Mean of Outcome & 0.1715 & 0.02945 & 4.464 & 0.7024\\
 \bottomrule
 \end{tabular}
 \end{table}

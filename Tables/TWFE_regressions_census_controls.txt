@@ -2,24 +2,25 @@
 \centering
 \begin{tabular}{lcccccc}
    \tabularnewline \midrule \midrule
-   Dependent Variables: & lnPopulation   & lnChild\_women\_ratio   & lnManufacturing & lnNotAgriculture & HISCAM\_avg  & lnMigration\\  
-   Model:               & (1)            & (2)                     & (3)             & (4)              & (5)          & (6)\\  
+   Dependent Variables:    & lnPopulation   & lnChild\_women\_ratio   & lnManufacturing & lnNotAgriculture & HISCAM\_avg  & lnMigration\\  
+   Model:                  & (1)            & (2)                     & (3)             & (4)              & (5)          & (6)\\  
    \midrule
    \emph{Variables}\\
-   Connected\_railway   & 0.0664$^{***}$ & 0.0011                  & 0.1237$^{***}$  & 0.1036$^{***}$   & 0.0862       & 0.1013$^{**}$\\   
-                        & (0.0094)       & (0.0032)                & (0.0203)        & (0.0193)         & (0.0645)     & (0.0399)\\   
+   Connected\_railway      & 0.0664$^{***}$ & 0.0011                  & 0.1237$^{***}$  & 0.1036$^{***}$   & 0.0862       & 0.1013$^{**}$\\   
+                           & (0.0094)       & (0.0032)                & (0.0203)        & (0.0193)         & (0.0645)     & (0.0399)\\   
    \midrule
    \emph{Fixed-effects}\\
-   GIS\_ID              & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   Year                 & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   Dist\_hamb\_year     & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   Dist\_cph\_year      & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   Dist\_ox\_year       & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   Pop1801\_year        & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
-   county\_by\_year     & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   GIS\_ID                 & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Year                    & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Dist\_hamb\_year        & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Dist\_cph\_year         & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Dist\_ox\_year          & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Pop1801\_year           & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   county\_by\_year        & Yes            & Yes                     & Yes             & Yes              & Yes          & Yes\\  
    \midrule
    \emph{Fit statistics}\\
-   Observations         & 6,356          & 6,336                   & 6,356           & 6,356            & 6,355        & 6,356\\  
+   Observations            & 6,356          & 6,336                   & 6,356           & 6,356            & 6,355        & 6,356\\  
+   Dependent variable mean & 6.4738         & 0.39484                 & 4.1637          & 4.4711           & 48.631       & 4.4012\\  
    \midrule \midrule
    \multicolumn{7}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
    \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\

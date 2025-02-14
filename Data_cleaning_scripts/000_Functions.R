@@ -468,9 +468,29 @@ signif0 = function(x, digits = 4){
 
 
 # ==== extract_res (from cs estimates) ====
-extract_res = function(summary_results){
-  
-  extracted_res = lapply(
+extract_res = function(summary_results, grouped = FALSE){
+
+  if(grouped){
+    extracted_res = lapply(
+      summary_results, function(x){
+        t = x$att.egt / x$se.egt
+        p = pnorm(abs(t), lower.tail = FALSE)*2
+        data.frame(
+          "Estimate" = x$att.egt,
+          "SE" = x$se.egt,
+          "t" = t,
+          "p" = p,
+          "group" = x$egt,
+          n = x$DIDparams$data %>% NROW(),
+          n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
+          control_group = x$DIDparams$control_group,
+          mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+          outcome = x$DIDparams$yname
+        )
+      }
+    )
+  } else {
+    extracted_res = lapply(
     summary_results, function(x){
       t = x$overall.att / x$overall.se
       p = pnorm(abs(t), lower.tail = FALSE)*2
@@ -487,6 +507,9 @@ extract_res = function(summary_results){
       )
     }
   )
+  }
+  
+  
 
   extracted_res = do.call(bind_rows, extracted_res)
 
@@ -569,4 +592,17 @@ ggdid_custom = function(x){
     )
   
   return(p)
+}
+
+
+# ==== stars ====
+stars = function(Estimate, p, NSIGNIF){
+  return(
+    case_when(
+      p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "$^{***}$"),
+      p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "$^{**}$"),
+      p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "$^{*}$"),
+      TRUE ~ paste0(signif0(Estimate, NSIGNIF))
+    )
+  )
 }

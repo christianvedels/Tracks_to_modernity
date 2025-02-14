@@ -1,0 +1,141 @@
+\begingroup
+\centering
+\begin{tabular}{lcccccc}
+   \tabularnewline \midrule \midrule
+   Dependent Variables:    & lnPopulation & lnChild\_women\_ratio   & lnManufacturing & lnNotAgriculture & HISCAM\_avg  & lnMigration\\  
+   Model:                  & (1)          & (2)                     & (3)             & (4)              & (5)          & (6)\\  
+   \midrule
+   \emph{Variables}\\
+   Connected\_railway      & 0.2064$^{*}$ & -0.0109                 & 0.2917          & 0.2055           & 1.583$^{**}$ & -0.6508\\   
+                           & (0.1240)     & (0.0364)                & (0.2599)        & (0.2601)         & (0.7932)     & (0.5248)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   GIS\_ID                 & Yes          & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   Year                    & Yes          & Yes                     & Yes             & Yes              & Yes          & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   Observations            & 5,500        & 5,487                   & 5,500           & 5,500            & 5,499        & 5,500\\  
+   Dependent variable mean & 6.4738       & 0.39805                 & 4.1564          & 4.4656           & 48.613       & 4.4131\\  
+   \midrule \midrule
+   \multicolumn{7}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
+   \multicolumn{7}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
+\begingroup
+\centering
+\begin{tabular}{lc}
+   \tabularnewline \midrule \midrule
+   Dependent Variable: & Connected\_railway\\   
+   Model:              & (1)\\  
+   \midrule
+   \emph{Variables}\\
+   Connected\_lcp      & 0.1446$^{***}$\\   
+                       & (0.0387)\\   
+   \midrule
+   \emph{Fixed-effects}\\
+   GIS\_ID             & Yes\\  
+   Year                & Yes\\  
+   \midrule
+   \emph{Fit statistics}\\
+   F-test (1st stage)  & 40.854\\  
+   \midrule \midrule
+   \multicolumn{2}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
+   \multicolumn{2}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+\end{tabular}
+\par\endgroup
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,500
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.144569   0.038743 3.73145 0.00019814 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.246311     Adj. R2: 0.403666
+                 Within R2: 0.00738 
+F-test (1st stage): stat = 40.9, p = 1.775e-10, on 1 and 5,495 DoF.
+
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,487
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.145269   0.038727 3.75107 0.00018341 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.24592     Adj. R2: 0.40352 
+                Within R2: 0.007456
+F-test (1st stage): stat = 41.2, p = 1.506e-10, on 1 and 5,482 DoF.
+
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,500
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.144569   0.038743 3.73145 0.00019814 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.246311     Adj. R2: 0.403666
+                 Within R2: 0.00738 
+F-test (1st stage): stat = 40.9, p = 1.775e-10, on 1 and 5,495 DoF.
+
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,500
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.144569   0.038743 3.73145 0.00019814 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.246311     Adj. R2: 0.403666
+                 Within R2: 0.00738 
+F-test (1st stage): stat = 40.9, p = 1.775e-10, on 1 and 5,495 DoF.
+
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,499
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.144434   0.038831 3.71951 0.00020765 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.246333     Adj. R2: 0.403611
+                 Within R2: 0.00735 
+F-test (1st stage): stat = 40.7, p = 1.942e-10, on 1 and 5,494 DoF.
+
+$Connected_railway
+TSLS estimation - Dep. Var.: Connected_railway
+                  Endo.    : Connected_railway
+                  Instr.   : Connected_lcp
+First stage: Dep. Var.: Connected_railway
+Observations: 5,500
+Fixed-effects: GIS_ID: 1,375,  Year: 4
+Standard-errors: Clustered (GIS_ID) 
+              Estimate Std. Error t value   Pr(>|t|)    
+Connected_lcp 0.144569   0.038743 3.73145 0.00019814 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+RMSE: 0.246311     Adj. R2: 0.403666
+                 Within R2: 0.00738 
+F-test (1st stage): stat = 40.9, p = 1.775e-10, on 1 and 5,495 DoF.
+

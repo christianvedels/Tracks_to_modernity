@@ -1,22 +1,23 @@
 \begingroup
 \centering
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
    \tabularnewline \midrule \midrule
-   Dependent Variables: & Assembly\_house  & HighSchool\\  
-   Model:               & (1)              & (2)\\  
+   Dependent Variables:    & Assembly\_house  & HighSchool & MA\_assembly   & MA\_folkhigh\\   
+   Model:                  & (1)              & (2)        & (3)            & (4)\\  
    \midrule
    \emph{Variables}\\
-   Connected\_lcp       & 0.0542$^{*}$     & -0.0048\\   
-                        & (0.0324)         & (0.0144)\\   
+   Connected\_lcp          & 0.0331           & -0.0064    & 0.6637$^{***}$ & 0.0302\\   
+                           & (0.0329)         & (0.0152)   & (0.1341)       & (0.0211)\\   
    \midrule
    \emph{Fixed-effects}\\
-   GIS\_ID              & Yes              & Yes\\  
-   Year                 & Yes              & Yes\\  
+   GIS\_ID                 & Yes              & Yes        & Yes            & Yes\\  
+   Year                    & Yes              & Yes        & Yes            & Yes\\  
    \midrule
    \emph{Fit statistics}\\
-   Observations         & 76,890           & 76,890\\  
+   Observations            & 67,200           & 67,200     & 67,200         & 67,200\\  
+   Dependent variable mean & 0.15868          & 0.02536    & 4.4509         & 0.69486\\  
    \midrule \midrule
-   \multicolumn{3}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
-   \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \multicolumn{5}{l}{\emph{Clustered (GIS\_ID) standard-errors in parentheses}}\\
+   \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
 \end{tabular}
 \par\endgroup

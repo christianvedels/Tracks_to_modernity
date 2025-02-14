@@ -4,10 +4,10 @@
 \centering
 \begin{tabular}[t]{lcccccc}
 \toprule
-  & lnPopulation & lnChild\_women\_ratio & lnManufacturing & lnNotAgriculture & HISCAM\_avg & lnMigration\\
+  & lnPopulation & lnChild_women_ratio & lnManufacturing & lnNotAgriculture & HISCAM_avg & lnMigration\\
 \midrule
-Connected railway & 0.0393* & 0.002025 & 0.04419 & 0.03681 & 0.4246** & 0.0369\\
- & (0.0216) & (0.007476) & (0.04046) & (0.04088) & (0.1731) & (0.06868)\\
+Connected railway & 0.0392$^{*}$ & 0.002019 & 0.04416 & 0.03679 & 0.4256$^{***}$ & 0.03686\\
+ & (0.02224) & (0.007529) & (0.04479) & (0.04104) & (0.1628) & (0.07324)\\
 N Obs. & 3568 & 3528 & 3568 & 3568 & 3568 & 3568\\
 N parishes & 892 & 882 & 892 & 892 & 892 & 892\\
 Mean of Outcome & 6.397 & 0.3976 & 4.088 & 4.397 & 48.58 & 4.354\\
