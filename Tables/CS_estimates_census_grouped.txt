@@ -1,0 +1,20 @@
+\begin{table}
+
+\caption{Railways and Local Development}
+\centering
+\begin{tabular}[t]{lcccccc}
+\toprule
+  & lnPopulation & lnChild_women_ratio & lnManufacturing & lnNotAgriculture & HISCAM_avg & lnMigration\\
+\midrule
+Connected railway 1860 & -0.06913$^{**}$ & -0.03952$^{**}$ & 0.004248 & -0.08211 & 0.1783 & -0.2604\\
+Connected railway 1880 & 0.07367$^{***}$ & 0.002516 & 0.1031$^{***}$ & 0.07768$^{***}$ & 0.2699$^{***}$ & 0.03983\\
+Connected railway 1901 & 0.07514$^{***}$ & 0.004496 & 0.1037$^{***}$ & 0.08585$^{***}$ & 0.1025 & 0.304$^{***}$\\
+ & (0.02816) & (0.01708) & (0.08779) & (0.05971) & (0.473) & (0.1681)\\
+ & (0.01487) & (0.004027) & (0.02782) & (0.02826) & (0.08679) & (0.05567)\\
+ & (0.01234) & (0.005724) & (0.0322) & (0.02853) & (0.1198) & (0.06838)\\
+N Obs. & 6324 & 6244 & 6324 & 6324 & 6320 & 6324\\
+N parishes & 1581 & 1561 & 1581 & 1581 & 1580 & 1581\\
+Mean of Outcome & 6.472 & 0.3949 & 4.161 & 4.468 & 48.62 & 4.394\\
+\bottomrule
+\end{tabular}
+\end{table}

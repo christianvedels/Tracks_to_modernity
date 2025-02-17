@@ -16,16 +16,16 @@ library(foreach)
 library(raster)
 library(elevatr)
 
-source("000_Functions.R") # Contains calc_rail()
+source("Data_cleaning_scripts/000_Functions.R") # Contains calc_rail()
 
 # ==== Load data ====
 # Load shape files
-shape_parishes = read_sf("../Data/sogne_shape/sogne.shp")
+shape_parishes = read_sf("Data/sogne_shape/sogne.shp")
 
-f_shapes = list.files("../../Data not redistributable/Instrument_shapes/lcp_shape_files", pattern = ".shp")
+f_shapes = list.files("../Data not redistributable/Instrument_shapes/lcp_shape_files", pattern = ".shp")
 
 shapes = foreach(f = f_shapes) %do% {
-  f_full = paste0("../../Data not redistributable/Instrument_shapes/lcp_shape_files/",f)
+  f_full = paste0("../Data not redistributable/Instrument_shapes/lcp_shape_files/",f)
   shape_f = st_read(f_full) %>% st_transform(crs = 32632)
   return(shape_f)
 }
@@ -57,7 +57,7 @@ foreach(i = 1:length(shapes)) %do% {
     mutate(parameter = parameter)
   
   railways_panel_i %>% 
-    write_csv2(paste0("../Data/Instruments/paramS_",parameter, ".csv"))
+    write_csv2(paste0("Data/Instruments/paramS_",parameter, ".csv"))
   
   cat("\n===> FINISHED:",parameter)
 }
@@ -66,7 +66,7 @@ foreach(i = 1:length(shapes)) %do% {
 # In 1876 railways between major towns were done. Therefore we simply have 
 # constant railway lines from then (predicted by the instrument)
 
-f_panels = list.files("../Data/Instruments", full.names = TRUE)
+f_panels = list.files("Data/Instruments", full.names = TRUE)
 
 foreach(f = f_panels) %do% {
   data_f = read_csv2(f)

@@ -229,20 +229,22 @@ calc_rail = function(shape,
         layer_spatial(data = shape_y) +
         theme_bw() +
         labs(
-          title = paste0("Year ", y),
-          subtitle = paste0(
-            parishes_covered,
-            " of ",
-            NROW(shape_parishes),
-            " parishes covered (",
-            pretty_pct(parishes_covered / NROW(shape_parishes)),
-            ")"
-          ),
-          caption = "Data from Fertner (2013)",
+          # title = paste0("Year ", y),
+          # subtitle = paste0(
+          #   parishes_covered,
+          #   " of ",
+          #   NROW(shape_parishes),
+          #   " parishes covered (",
+          #   pretty_pct(parishes_covered / NROW(shape_parishes)),
+          #   ")"
+          # ),
+          # caption = "Data from Fertner (2013)",
           col = "Parish connected:",
           fill = "Parish connected:"
         ) +
-        theme(legend.position = "bottom")
+        theme(legend.position = "bottom") + 
+        scale_colour_manual(values = c("Yes"=colours$red, "No" = "grey")) + 
+        scale_fill_manual(values = c("Yes"=colours$red, "No" = "grey"))
       
       # Distance to rail
       p2 = ggplot() +
@@ -458,3 +460,151 @@ min_treat_year = function(year, treat){
 }
 
 
+# ==== signif0 ====
+signif0 = function(x, digits = 4){
+  if(is.numeric(x)){
+    x = signif(x, digits = digits)
+  }
+  return(x)
+}
+
+
+# ==== extract_res (from cs estimates) ====
+extract_res = function(summary_results, grouped = FALSE){
+
+  if(grouped){
+    extracted_res = lapply(
+      summary_results, function(x){
+        t = x$att.egt / x$se.egt
+        p = pnorm(abs(t), lower.tail = FALSE)*2
+        data.frame(
+          "Estimate" = x$att.egt,
+          "SE" = x$se.egt,
+          "t" = t,
+          "p" = p,
+          "group" = x$egt,
+          n = x$DIDparams$data %>% NROW(),
+          n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
+          control_group = x$DIDparams$control_group,
+          mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+          outcome = x$DIDparams$yname
+        )
+      }
+    )
+  } else {
+    extracted_res = lapply(
+    summary_results, function(x){
+      t = x$overall.att / x$overall.se
+      p = pnorm(abs(t), lower.tail = FALSE)*2
+      data.frame(
+        "Estimate" = x$overall.att,
+        "SE" = x$overall.se,
+        "t" = t,
+        "p" = p,
+        n = x$DIDparams$data %>% NROW(),
+        n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
+        control_group = x$DIDparams$control_group,
+        mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+        outcome = x$DIDparams$yname
+      )
+    }
+  )
+  }
+  
+  
+
+  extracted_res = do.call(bind_rows, extracted_res)
+
+
+  return(extracted_res)
+}
+
+
+# ==== time_passed ====
+time_passed = function(time0, category = ""){
+  time1 = Sys.time()
+  time_diff = time1 - time0
+  time_diff_secs = as.numeric(time_diff, units = "secs")
+  time_diff_mins = as.numeric(time_diff, units = "mins")
+  time_diff_hours = as.numeric(time_diff, units = "hours")
+  time_diff_secs = round(time_diff_secs, 2)
+  time_diff_mins = round(time_diff_mins, 2)
+  time_diff_hours = round(time_diff_hours, 2)
+
+  to_print = paste0(
+    category,
+    "Time passed: ",
+    time_diff_secs,
+    " seconds (",
+    time_diff_mins,
+    " minutes, ",
+    time_diff_hours,
+    " hours)\n"
+  )
+  cat(to_print)
+
+  return(time1)
+}
+
+
+# ==== Custom aggregation ====
+custom_aggregate = function(x, groups = list(1840:1860, 1861:1880, 1881:1900, 1901:1920)){
+  warning("This function (custom aggregate) is a work in progress")
+  group_labels = sapply(groups, function(g) paste0(min(g), "-", max(g)))
+
+  tmp_funky = function(t){
+    for(i in 1:length(groups)){
+      if(t %in% groups[[i]]){
+        return(group_labels[i])
+      }
+    }
+  }
+  
+  summary = data.frame(att = x$att, t = x$t) %>%
+    rowwise() %>%
+    # Check if t is in group
+    mutate(
+      group = tmp_funky(t)
+    ) %>%
+    group_by(group) %>%
+    summarise(
+      se_ish = sd(att)/sqrt(NROW(att)),
+      aggte = mean(att)      
+    )
+  
+}
+
+ggdid_custom = function(x){
+  warning("This function (ggdid_custom) is a work in progress")
+  p = x %>%
+    ggplot(aes(x = aggte, y = group)) +
+    geom_point(col = colours$red) +
+    geom_errorbarh(
+      col = colours$red,
+      aes(xmin = aggte - 1.96*se_ish,
+          xmax = aggte + 1.96*se_ish,
+          width = 0.2
+      )
+    ) +
+    geom_vline(xintercept = 0) +
+    theme_bw() + 
+    labs(
+      x = "Effect\nNOTE: Take SE with a grain of salt",
+      y = "Group"
+    )
+  
+  return(p)
+}
+
+
+# ==== stars ====
+stars = function(Estimate, p, NSIGNIF){
+  return(
+    case_when(
+      p < 0.01 ~ paste0(signif0(Estimate, NSIGNIF), "$^{***}$"),
+      p < 0.05 ~ paste0(signif0(Estimate, NSIGNIF), "$^{**}$"),
+      p < 0.1 ~ paste0(signif0(Estimate, NSIGNIF), "$^{*}$"),
+      TRUE ~ paste0(signif0(Estimate, NSIGNIF))
+    )
+  )
+}
