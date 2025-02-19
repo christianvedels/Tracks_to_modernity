@@ -132,6 +132,7 @@ nodes_sf <- st_as_sf(nodes,
                      crs = 4326)
 
 
+years <- c(1847, 1876, 1901)
 
 # --------------
 
@@ -153,58 +154,29 @@ rail01 <- st_crop(rail01, crop_extent)
 # Exclude Bornholm from nodes
 nodes_sf <- nodes_sf %>% filter(!Market_town == "Roenne")
 
-# === PLOTS === #
+# ==== Dynamic Plot Creation ====
 
-# 1847
-p_1847 <- ggplot() +
-  geom_sf(data = dk_cropped, fill = "grey90", color = "grey") +  # Denmark outline
-  geom_sf(data = rail47, color = colours$red, linewidth = 1.25, alpha = 1) +  # Railways in 1847
-  geom_sf(data = lcp47, color = colours$blue, linewidth = 1.25, linetype = "dashed", alpha = 1) +  # LCP in 1847
-  geom_sf(data = nodes_sf, size = 2, shape = 21, fill = "black") + # Nodes as dots
-  theme_void() +  # Removes grid and axis labels
-  theme(panel.background = element_rect(fill = "white", color = NA),  # Set clean white background
-        plot.title = element_text(size = 14, face = "bold"))
-
-p_1847
+years <- c(1847, 1876, 1901)
 
 
-ggsave("Plots/Rails_and_LCP_1847.png", p_1847, width = dims$width, height = dims$height)
-
-# ----------------------
-
-# 1876
-p_1876 <- ggplot() +
-  geom_sf(data = dk_cropped, fill = "grey90", color = "grey") +  # Denmark outline
-  geom_sf(data = rail76, color = colours$red, linewidth = 1.25, alpha = 1) +  # Railways in 1847
-  geom_sf(data = lcp76, color = colours$blue, linewidth = 1.25, linetype = "dashed", alpha = 1) +  # LCP in 1847
-  geom_sf(data = nodes_sf, size = 2, shape = 21, fill = "black") + # Nodes as dots
-  theme_void() +  # Removes grid and axis labels
-  theme(panel.background = element_rect(fill = "white", color = NA),  # Set clean white background
-        plot.title = element_text(size = 14, face = "bold"))
-
-p_1876
-
-
-ggsave("Plots/Rails_and_LCP_1876.png", p_1876, width = dims$width, height = dims$height)
-
-# ----------------------
-
-# 1901
-p_1901 <- ggplot() +
-  geom_sf(data = dk_cropped, fill = "grey90", color = "grey") +  # Denmark outline
-  geom_sf(data = rail01, color = colours$red, linewidth = 1.25, alpha = 1) +  # Railways in 1847
-  geom_sf(data = lcp01, color = colours$blue, linewidth = 1.25, linetype = "dashed", alpha = 1) +  # LCP in 1847
-  geom_sf(data = nodes_sf, size = 2, shape = 21, fill = "black") + # Nodes as dots
-  theme_void() +  # Removes grid and axis labels
-  theme(panel.background = element_rect(fill = "white", color = NA),  # Set clean white background
-        plot.title = element_text(size = 14, face = "bold"))
-
-p_1901
-
-
-ggsave("Plots/Rails_and_LCP_1901.png", p_1901, width = dims$width, height = dims$height)
-
-
+for (year in years) {
+  rail_subset <- rail[rail$opened <= year, ]
+  lcp_subset <- lcp[lcp$opened <= year, ]
+  
+  if (year == 1901) {
+    rail_subset <- st_crop(rail_subset, crop_extent)
+  }
+  
+  p <- ggplot() +
+    geom_sf(data = dk_cropped, fill = "grey90", color = "grey") +
+    geom_sf(data = rail_subset, color = "black", linewidth = 1, alpha = 1, linetype = "solid") +
+    geom_sf(data = lcp_subset, color = colours$red, linewidth = 1, linetype = "longdash", alpha = 1) +
+    geom_sf(data = nodes_sf, size = 3, shape = 21, fill = "black") +
+    theme_void() +
+    theme(panel.background = element_rect(fill = "white", color = NA))
+  print(p)
+  ggsave(paste0("Plots/Rails_and_LCP_", year, ".png"), p, width = 10, height = 8)
+}
 
 
 
