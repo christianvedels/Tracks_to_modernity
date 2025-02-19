@@ -16,16 +16,27 @@ library(tidygeocoder)
 
 source("Data_cleaning_scripts/000_Functions.R")
 
-# ==== Load data ====
 
-# Read the shapefiles
+# ==== Read DK shape file ====
+
+# Download shapefile from DAWA
+url = "https://api.dataforsyningen.dk/kommuner?format=geojson"
+geofile = tempfile()
+download.file(url, geofile)
+shape = st_read(geofile)
+
+shape = shape %>% 
+  filter(!navn %in% c("Tønder", "Haderslev", "Aabenraa", "Sønderborg"))
+
+dk <- shape %>%
+  st_make_valid() %>%   
+  st_union()
+
+# Read the other shapefiles
 lcp <- st_read("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
 
 rail <- st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
   st_transform(crs = 4326)  # Ensure transformation to WGS 84
-
-dk <- st_read("Data/Denmark Outline ADM 0 Stanford/DNK_adm0.shp") %>%
-  st_transform(crs = 4326)
 
 # bbox without Bornholm
 crop_extent <- st_bbox(c(xmin = 8.076389, 
@@ -177,6 +188,7 @@ for (year in years) {
   print(p)
   ggsave(paste0("Plots/Rails_and_LCP_", year, ".png"), p, width = 10, height = 8)
 }
+
 
 
 
