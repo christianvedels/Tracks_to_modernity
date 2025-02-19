@@ -27,7 +27,7 @@ crit_slope_values = c(1:16)
 
 # ==== Load data (Railway shape data and Outline of Denmark) ====
 shape_data = st_read("../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>% st_transform(4326)
-outline_dk = st_read("../Data not redistributable/Outline DK/DNK_adm0.shp") %>% st_transform(4326)
+outline_dk = st_read("Data/Denmark Outline ADM 0 Stanford/DNK_adm0.shp") %>% st_transform(4326)
 
 # Reading in market towns
 market_towns = read_delim("Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE, locale =locale(encoding = "ISO-8859-1"))
