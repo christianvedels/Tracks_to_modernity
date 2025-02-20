@@ -2,7 +2,7 @@
 #
 # Date updated:   2025-02-18
 # Author:         Tom Görges
-# Purpose:        Creates 3-4 maps in one plot showing the evolution of the railways and Denmark and our LCP instrument.
+# Purpose:        Creates maps showing the evolution of the railways in Denmark and our LCP instrument.
 
 # ==== Libraries ====
 library(sf)
@@ -143,31 +143,12 @@ nodes_sf <- st_as_sf(nodes,
                      crs = 4326)
 
 
-years <- c(1847, 1876, 1901)
-
-# --------------
-
-# 1847 subset
-rail47 <- rail[rail$opened <= 1847, ]
-lcp47 <- lcp[lcp$opened <= 1847, ]
-
-# 1876 subset
-rail76 <- rail[rail$opened <= 1876, ]
-lcp76 <- lcp
-
-# 1901 subset
-rail01 <- rail[rail$opened <= 1901, ]
-lcp01 <- lcp
-
-# Exclude Bornholm from 1901 rails
-rail01 <- st_crop(rail01, crop_extent)
-
 # Exclude Bornholm from nodes
 nodes_sf <- nodes_sf %>% filter(!Market_town == "Roenne")
 
 # ==== Dynamic Plot Creation ====
 
-years <- c(1847, 1876, 1901)
+years <- c(1847, 1850, 1860, 1876, 1880, 1901)
 
 
 for (year in years) {
@@ -175,7 +156,7 @@ for (year in years) {
   lcp_subset <- lcp[lcp$opened <= year, ]
   
   if (year == 1901) {
-    rail_subset <- st_crop(rail_subset, crop_extent)
+    rail_subset <- st_crop(rail_subset, crop_extent) # Exclude Bornholm from 1901 rails
   }
   
   p <- ggplot() +
