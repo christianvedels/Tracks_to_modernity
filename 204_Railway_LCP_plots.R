@@ -36,7 +36,16 @@ dk <- shape %>%
 lcp <- st_read("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
 
 rail <- st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
-  st_transform(crs = 4326)  # Ensure transformation to WGS 84
+  st_transform(crs = 4326) %>%  # Ensure transformation to WGS 84
+  mutate(id = c(1:n()))
+
+schleswig_ids <- c(55, 74, 169, 1, 190, 73, 220, 221,
+                   195, 196, 219, 152, 151, 222, 173,
+                   174, 175, 172, 177, 166, 180, 179,
+                   178, 223, 183, 182, 176, 208, 171)
+
+# Exclude schleswig rails
+rail <- rail %>% filter(!id %in% schleswig_ids)
 
 # bbox without Bornholm
 crop_extent <- st_bbox(c(xmin = 8.076389, 
