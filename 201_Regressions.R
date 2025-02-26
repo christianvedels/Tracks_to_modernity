@@ -1839,6 +1839,7 @@ main = function(){
   # Descipritve statistics:
   summary_tables()
   census_distributions()
+  census_distributions_by_year()
   grundtvig_distributions_over_time()
 
   time_descriptive = time_passed(start_time, "Descriptive: ")
