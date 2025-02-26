@@ -282,6 +282,90 @@ census_distributions = function(){
   ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height)
 }
 
+# Distributions comparing treated to not yet treated
+census_distributions_by_year = function(){
+  tmp = census %>%
+    group_by(GIS_ID) %>%
+    mutate(Ever_rail = case_when(mean(Connected_railway) > 0 ~ "Yes", TRUE ~ "No")) %>%
+    filter(Year == 1850)
+
+  p1 = tmp %>%
+    filter(Connected_railway == 0) %>%   # Exclude parishes with railways already 
+    mutate(
+      lnpop1801 = log(Pop1801)
+    ) %>%
+    select(
+      Treat_year,
+      Ever_rail, 
+      lnPopulation, 
+      lnChild_women_ratio, 
+      lnManufacturing, 
+      lnNotAgriculture, 
+      HISCAM_avg, 
+      lnMigration,
+      dist_hmb,
+      dist_cph,
+      DistOxRoad,
+      lnpop1801
+    ) %>%
+    pivot_longer(
+      cols = c(
+        lnPopulation, 
+        lnChild_women_ratio, 
+        lnManufacturing, 
+        lnNotAgriculture, 
+        HISCAM_avg, 
+        lnMigration,
+        dist_hmb,
+        dist_cph,
+        DistOxRoad,
+        lnpop1801
+      ), 
+      names_to = "var"
+    ) %>%
+    mutate(
+      var = outcomeNames(var)
+    ) %>%
+    mutate(
+      Treat_year = ifelse(
+        Treat_year == 0,
+        "Never",
+        as.character(Treat_year)
+      )
+    ) %>%
+    ggplot(aes(x = value, fill = Treat_year)) +
+    geom_density(alpha = 0.25) + 
+    facet_wrap(~var, scales = "free", ncol = 3) +  # columns layout
+    scale_fill_manual(
+      values = c(
+        "Never" = colours$black, 
+        "1850" = colours$red,
+        "1860" = colours$blue,
+        "1880" = colours$green,
+        "1901" = colours$orange
+      )
+    ) +
+    theme_minimal(base_size = 14) + 
+    labs(fill = "When was it connected to the railway?") +
+    theme(
+      legend.position = "bottom",
+      legend.title = element_text(),
+      strip.text = element_text(face = "bold", size = 12),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank()
+    ) + 
+    theme_bw() +
+    labs(
+      x = "",
+      y = ""
+    ) + 
+    theme(legend.position = "bottom")
+
+  print(p1)
+
+  ggsave("Plots/Densities_census_treat_year.png", p1, width = dims$width, height = dims$height)
+}
+
 
 # Grundtvig
 grundtvig_distributions_over_time = function(){
@@ -1755,6 +1839,7 @@ main = function(){
   # Descipritve statistics:
   summary_tables()
   census_distributions()
+  census_distributions_by_year()
   grundtvig_distributions_over_time()
 
   time_descriptive = time_passed(start_time, "Descriptive: ")
