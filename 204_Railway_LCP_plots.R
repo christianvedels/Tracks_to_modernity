@@ -33,9 +33,9 @@ dk <- shape %>%
   st_union()
 
 # Read the other shapefiles
-lcp <- st_read("../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
+lcp <- st_read("../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_1.shp")
 
-rail <- st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
+rail <- st_read("../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
   st_transform(crs = 4326) %>%  # Ensure transformation to WGS 84
   mutate(id = c(1:n()))
 
@@ -67,7 +67,6 @@ st_crs(lcp) == st_crs(dk_cropped)
 # Reading in market towns
 market_towns = read_delim("Data/Market_towns.csv", delim = ";", escape_double = FALSE, trim_ws = TRUE, locale =locale(encoding = "ISO-8859-1"))
 
-# -----------
 # Clean Coord column in market towns
 
 # Define a helper function
@@ -176,8 +175,25 @@ for (year in years) {
     theme_void() +
     theme(panel.background = element_rect(fill = "white", color = NA))
   print(p)
-  ggsave(paste0("Plots/Rails_and_LCP_", year, ".png"), p, width = 10, height = 8)
+  ggsave(paste0("Plots/Maps_of_railways/Rails_and_LCP_", year, ".png"), p, width = 10, height = 8)
 }
+
+for (year in years) { # Without LCP
+  rail_subset <- rail[rail$opened <= year, ]
+  
+  if (year == 1901) {
+    rail_subset <- st_crop(rail_subset, crop_extent) # Exclude Bornholm from 1901 rails
+  }
+  
+  p <- ggplot() +
+    geom_sf(data = dk_cropped, fill = "grey90", color = "grey") +
+    geom_sf(data = rail_subset, color = "black", linewidth = 1, alpha = 1, linetype = "solid") +
+    geom_sf(data = nodes_sf, size = 3, shape = 21, fill = "black") +
+    theme_void() +
+    theme(panel.background = element_rect(fill = "white", color = NA))
+  print(p)
+  ggsave(paste0("Plots/Maps_of_railways/Rails", year, ".png"), p, width = 10, height = 8)
+} 
 
 
 
