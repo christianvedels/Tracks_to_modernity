@@ -279,7 +279,7 @@ census_distributions = function(){
 
   print(p1)
 
-  ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height)
+  ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height, create.dir = TRUE)
 }
 
 # Distributions comparing treated to not yet treated
@@ -363,7 +363,7 @@ census_distributions_by_year = function(){
 
   print(p1)
 
-  ggsave("Plots/Densities_census_treat_year.png", p1, width = dims$width, height = dims$height)
+  ggsave("Plots/Densities_census_treat_year.png", p1, width = dims$width, height = dims$height, create.dir = TRUE)
 }
 
 
@@ -399,7 +399,7 @@ grundtvig_distributions_over_time = function(){
 
   print(p1)
 
-  ggsave("Plots/Grundtvig_over_time.png", p1, width = dims$width, height = 1.25*dims$height)
+  ggsave("Plots/Grundtvig_over_time.png", p1, width = dims$width, height = 1.25*dims$height, create.dir = TRUE)
 }
 
 # ==== Function to make plots of cs estimates ====
@@ -448,7 +448,7 @@ save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1,
 
     # Create dir
     dir.create(dirname(fname), showWarnings = FALSE)
-    ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE)
+    ggsave(fname, p, width = mult*dims$width, height = mult*dims$height, limitsize = FALSE, create.dir = TRUE)
   }
 }
 
