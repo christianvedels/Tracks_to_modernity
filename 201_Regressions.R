@@ -417,6 +417,10 @@ save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1,
     # Replace all " " with "_" in fname
     fname = gsub(" ", "_", fname)
 
+    # Replace "(" and ")" with ""
+    fname = gsub("\\(", "", fname)
+    fname = gsub("\\)", "", fname)
+
     if(is.na(ylab)){
       ylab = outcomeNames(outcome_names[i])
     }
