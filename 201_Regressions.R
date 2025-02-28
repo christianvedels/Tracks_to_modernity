@@ -414,6 +414,9 @@ save_plots = function(plots, outcome_names, xformula, name = "Census", mult = 1,
       fname = paste("Plots/", name, "_control/", names(plots)[i], "_", outcome_names[i], ".png", sep = "")
     }
 
+    # Replace all " " with "_" in fname
+    fname = gsub(" ", "_", fname)
+
     if(is.na(ylab)){
       ylab = outcomeNames(outcome_names[i])
     }
