@@ -25,7 +25,7 @@ $\rightarrow$ [Full paper on arXiv](Link here soon.)
   ```
 </details>
 
-![Map](Plots/conceptual_framework.png)
+![Conceptual Framework](Plots/conceptual_framework.jpg)
 
 -------------
 
