@@ -2,7 +2,7 @@
 
 This is the public repository of *Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark* by *Tom Görges (TU Dortmund University), Magnus Ørberg Rove (University of Copenhagen), Paul Sharp (University of Southern Denmark), and Christian Vedel (University of Southern Denmark)*
 
-This paper shows that railway expansion in 19th-century Denmark spurred population growth, structural change, and the development of civic institutions, highlighting its dual role as an engine of economic modernization and social Transformation. 
+This paper shows how Denmark’s railways not only accelerated economic modernization but also fostered civic engagement and the prolifertion of key institutions, shaping the country’s development trajectory.
 
 $\rightarrow$ [Full paper on arXiv](Link here soon.)  
 
@@ -46,41 +46,36 @@ Parish level demographic statistics based on digtized census data from Link Live
 |-----------------------|----------------------------------------------------------------------------------------------------------|
 | Year                  | Census year                                                                                              |
 | GIS_ID                | Unique identifier for each parish, which links to the shape data                                         |
-| Pop                   | Population in parish
-| Pop_f                 | Female population in parish
-| Pop_m                 | Male population in parish                                                                                    |
-| Age_mean        	| Mean age
-|                                                                    
+| Pop                   | Population in parish 												|
+| Pop_f                 | Female population in parish											|
+| Pop_m                 | Male population in parish 											|
+| Age_mean        	| Mean age                                                                					|
 | Born_different_county | Number of people born in a different county                                                              |
-| hisco_majordigit[x]    | Number of people with first digit of their HISCO code [x]. See <https://historyofwork.iisg.nl/major.php> 
-|
-| Child_women_ratio     | Ratio of children to women
-|
-| Manufacturing_789     | Number of People working in occupations with HISCO codes starting with 7, 8, or 9
-|
-| Farming  		| Number of People working in occupations with HISCO codes starting with 6
-| 
-| hiscam_avg  		| Average HISCAM
-|                                                             
+| hisco_majordigit[x]    | Number of people with first digit of their HISCO code [x]. See <https://historyofwork.iisg.nl/major.php> |
+| Child_women_ratio     | Ratio of children to women |
+| Manufacturing_789     | Number of People working in occupations with HISCO codes starting with 7, 8, or 9 |
+| Farming  		| Number of People working in occupations with HISCO codes starting with 6 |
+| hiscam_avg  		| Average HISCAM      |                                                    
 
 
 ### B. Geo_info.csv
 
 This contains various geographic information.
 
-| Variable             | Description                                                                                           |
+| Variable             | Description                                      |
 |--------------------------------|----------------------------------------|
-| GIS_ID               | GIS_ID - unique ID in the parish shape data.
-| Parish               | Parish Name
-| Hundred              | Hundred of the parish   
-| County               | County of the parish                                                                                  |                                                                                        
-| Dist_coast		| Distance to closest coast in meters    
-| coastal		| Only parishes with \<5km distance to a coast    
-| dist_hmb		| Distance to Hamburg in meters         
-| dist_cph		| Distance to Copenhagen in meters                                            
-| Boulder_clay_pct      | Percentage of the land area that is covered by boulder clay                                                               | area_parish		| Total land area
-| Distance_market_town	| Distance to closest market town in meters
-| Closest_market_town	| GIS_ID of closest market town  
+| GIS_ID               | GIS_ID - unique ID in the parish shape data.  |
+| Parish               | Parish Name 					|
+| Hundred              | Hundred of the parish 				 |  
+| County               | County of the parish                     	 |                                                                                        
+| Dist_coast		| Distance to closest coast in meters    |
+| coastal		| Only parishes with \<5km distance to a coast |    
+| dist_hmb		| Distance to Hamburg in meters         |
+| dist_cph		| Distance to Copenhagen in meters       |                                     
+| Boulder_clay_pct      | Percentage of the land area that is covered by boulder clay    |                                                           
+| area_parish		| Total land area |
+| Distance_market_town	| Distance to closest market town in meters |
+| Closest_market_town	| GIS_ID of closest market town  |
 | DistOxRoad		| Distance to Ox Road (Hærvejen)                                                           |
 
 ### C. Hoejskoler_clean_panel.csv
