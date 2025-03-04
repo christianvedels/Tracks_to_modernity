@@ -2,9 +2,9 @@
 
 This is the public repository of *Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark* by *Tom Görges (TU Dortmund University), Magnus Ørberg Rove (University of Copenhagen), Paul Sharp (University of Southern Denmark), and Christian Vedel (University of Southern Denmark)*
 
-This paper shows how Denmark’s railways not only accelerated economic transformation but also fostered civic engagement and the prolifertion of key institutions, shaping the country’s long-run development trajectory.
+This paper shows how Denmark's railways not only accelerated economic transformation, but also fostered civic engagement and the proliferation of key institutions, shaping the country's long-term development trajectory.
 
-$\rightarrow$ [Full paper on arXiv](Link here soon.)  
+$\rightarrow$ [Full paper on arXiv](https://arxiv.org/abs/2502.21141)  
 
 
 <details>
@@ -13,13 +13,14 @@ $\rightarrow$ [Full paper on arXiv](Link here soon.)
   > Görges, T., M. Ørberg Rove, P. Sharp, and C. Vedel (2025). Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark. Unpublished manuscript.
   
   ```bibtex
-  @unpublished{GorgesRoveSharpVedel2025,
-  author    = {Tom Görges and Magnus Ørberg Rove and Paul Sharp and Christian Vedel},
-  title     = {Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark},
-  institution = {TU Dortmund University, University of Copenhagen, University of Southern Denmark},
-  year      = {2025},
-  note      = {Unpublished manuscript},
-  url       = {https://github.com/christianvedels/Tracks_to_modernity}
+  @misc{görges2025tracksmodernityrailroadsgrowth,
+      title={Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark}, 
+      author={Tom Görges and Magnus Ørberg Rove and Paul Sharp and Christian Vedel},
+      year={2025},
+      eprint={2502.21141},
+      archivePrefix={arXiv},
+      primaryClass={econ.GN},
+      url={https://arxiv.org/abs/2502.21141}, 
 }
 
   ```
