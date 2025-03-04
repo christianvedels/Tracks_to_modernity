@@ -2,7 +2,7 @@
 
 This is the public repository of *Tracks to Modernity: Railroads, Growth, and Social Movements in Denmark* by *Tom Görges (TU Dortmund University), Magnus Ørberg Rove (University of Copenhagen), Paul Sharp (University of Southern Denmark), and Christian Vedel (University of Southern Denmark)*
 
-This paper shows how Denmark’s railways not only accelerated economic modernization but also fostered civic engagement and the prolifertion of key institutions, shaping the country’s development trajectory.
+This paper shows how Denmark’s railways not only accelerated economic transformation but also fostered civic engagement and the prolifertion of key institutions, shaping the country’s long-run development trajectory.
 
 $\rightarrow$ [Full paper on arXiv](Link here soon.)  
 
