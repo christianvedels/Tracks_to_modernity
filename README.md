@@ -5,6 +5,7 @@ This is the public repository of *Tracks to Modernity: Railroads, Growth, and So
 This paper shows how Denmark's railways not only accelerated economic transformation, but also fostered civic engagement and the proliferation of key institutions, shaping the country's long-term development trajectory.
 
 $\rightarrow$ [Full paper on arXiv](https://arxiv.org/abs/2502.21141)  
+$\rightarrow$ [Slides](rawcdn.githack.com/christianvedels/Tracks_to_modernity/refs/heads/main/Slides/Slides.html)
 
 
 <details>
