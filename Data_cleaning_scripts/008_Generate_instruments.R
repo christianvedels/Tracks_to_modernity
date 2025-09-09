@@ -39,7 +39,9 @@ Market_town_naming_changes <- c(
   "Aeroeskoebing" = "Ærøskøbing",
   "Hoersholm" = "Hørsholm",
   "Skive" = "Skive, Skive",
-  "Soeborg" = "Søborg"
+  "Soeborg" = "Søborg",
+  "Glyngoere" = "Nykoebing Mors"
+  
 )
 
 # ==== Load data (Railway shape data and Outline of Denmark) ====
@@ -234,7 +236,7 @@ opening_years <- tribble(
   "Ringkøbing (2387702632)", "Varde",         1875,
   "Esbjerg",           "Varde",               1874,
   "Aalborg",           "Thisted",             1904,
-  "Nykoebing Mors",    "Skive, Skive",        1884,
+  "Glyngoere",         "Skive, Skive",        1884,
   "Fredericia",        "Vejle",               1868,
   "Frederikshavn",     "Skagen",              1890,
   "Frederikshavn",     "Hjoerring",           1871,
