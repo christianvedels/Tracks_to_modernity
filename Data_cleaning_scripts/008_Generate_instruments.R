@@ -65,7 +65,8 @@ manual_towns <- tibble(
 
 
 # bind together
-nodes <- bind_rows(mt, manual_towns)
+nodes <- bind_rows(mt, manual_towns) %>%
+  filter(!Market_town %in% c("Mariager", "Ærøskøbing", "Stege")) #market towns not connected to rail (1916)
 
 # -------------
 
