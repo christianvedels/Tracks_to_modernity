@@ -40,8 +40,7 @@ Market_town_naming_changes <- c(
   "Hoersholm" = "Hørsholm",
   "Skive" = "Skive, Skive",
   "Soeborg" = "Søborg",
-  "Glyngoere" = "Nykoebing Mors"
-  
+  "Nykoebing Mors" = "Glyngoere"
 )
 
 # ==== Load data (Railway shape data and Outline of Denmark) ====
@@ -375,8 +374,13 @@ for (yr in sort(unique(town_pairs$opened))) {
        col = "red", lwd = 3, add = TRUE)       # thicker red lines
   
   # --- towns (nodes) ---
-  plot(st_geometry(nodes_sf), 
-       col = "blue", pch = 19, cex = 1.2, add = TRUE) # bigger, filled points
+  plot(st_geometry(nodes_sf),
+       pch = 21,              # circle with border + fill
+       bg = "yellow",         # fill color
+       col = "black",         # border color
+       cex = 1.2,             # size
+       lwd = 2,
+       add = TRUE)
 }
 
 dev.off()
