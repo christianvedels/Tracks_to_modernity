@@ -60,8 +60,8 @@ mt = read_csv2(path, guess_max = 2000) %>%
 
 # Add Esbjerg and Struer
 manual_towns <- tibble(
-  Market_town = c("Esbjerg", "Struer"),
-  GIS_ID = c("1387", "1321")) %>%
+  Market_town = c("Esbjerg", "Struer", "Skjern"),
+  GIS_ID = c("1387", "1321", "180108")) %>%
   geocode(address = Market_town, method = "osm", custom_query = list(countrycodes = 'dk'), full_results = T)
 
 
@@ -72,7 +72,7 @@ nodes <- bind_rows(mt, manual_towns) %>%
 # -------------
 
 # Obtain elevation raster (from OpenStreetMap)
-denmark_elev = get_elev_raster(outline_dk, z = 7, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
+denmark_elev = get_elev_raster(outline_dk, z = 5, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
 # ==== Plot elev ====
 plot(denmark_elev)
@@ -230,9 +230,10 @@ opening_years <- tribble(
   "Holstebro",         "Struer",              1866,
   "Skive, Skive",      "Struer",              1865,
   "Struer",            "Thisted",             1882,
-  "Holstebro",         "Lemvig",              1879,
   "Ringkøbing (2387702632)", "Lemvig",        1879,
-  "Ringkøbing (2387702632)", "Varde",         1875,
+  "Ringkøbing (2387702632)", "Skjern",        1875, 
+  "Skjern",            "Varde",               1875,
+  "Skjern",            "Skanderborg",         1882,
   "Esbjerg",           "Varde",               1874,
   "Aalborg",           "Thisted",             1904,
   "Glyngoere",         "Skive, Skive",        1884,
@@ -338,13 +339,10 @@ for (slope_label in names(cost_surfaces)) {
   message("Saved ", nrow(all_lcps_sf), " paths for slope crit=", slope_label)
 }
 
-# Example: load and plot one
-test <- st_read("../../../Data not redistributable/Instrument_shapes/lcp_shape_files/LCP_scrit_12.shp")
-plot(st_geometry(outline_dk))
-plot(test$geometry, add = TRUE, col = "red", lwd = 3)
+########################
+# === SANITY Check === #
+########################
 
-
-# SANITY
 # === Plot year-by-year maps of actual railways + LCPs ===
 
 # Pick the LCPs for your crit_slope (here: 12)
