@@ -45,7 +45,7 @@ railways = railways %>%
   )
 
 # ==== Load instrument ====
-instrument = read_csv2("Data/Instruments/paramS_scrit_1.csv")
+instrument = read_csv2("Data/Instruments/paramS_scrit_2.csv") # 2 optimal according to confusion matrices
 
 instrument = instrument %>% 
   rename(

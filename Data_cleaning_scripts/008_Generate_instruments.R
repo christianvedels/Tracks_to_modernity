@@ -346,7 +346,7 @@ for (slope_label in names(cost_surfaces)) {
 # === Plot year-by-year maps of actual railways + LCPs ===
 
 # Pick the LCPs for your crit_slope (here: 12)
-lcp_sf <- lcp_sf_all_cost_surfaces[["1"]]
+lcp_sf <- lcp_sf_all_cost_surfaces[["2"]]
 
 # Path to PDF on Desktop
 out_pdf <- "../../../Data not redistributable/instrument_shapes/railways_year_by_year.pdf"
