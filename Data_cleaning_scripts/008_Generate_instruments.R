@@ -1,9 +1,9 @@
 # Railways: Generate instruments
 #
-# Date updated:   2025-09-09
+# Date updated:   2025-09-11
 # Author:         Tom Görges
 # Purpose:        This script takes slope information and returns shape files
-#                 of predicted railways based on least cost paths (Updated Version)
+#                 of predicted railways based on least cost paths
 
 
 # ==== Libraries ====
