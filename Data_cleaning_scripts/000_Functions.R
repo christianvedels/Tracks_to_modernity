@@ -278,8 +278,8 @@ calc_rail = function(shape,
         )
       
       # Save plots
-      fname1 = paste0("Plots/Plots_parish_connected/", id ,"N_Y", y, ".png")
-      fname2 = paste0("Plots/Plots_distance_to_rail/", id ,"N_Y", y, ".png")
+      fname1 = paste0("../Plots/Plots_parish_connected/", id ,"N_Y", y, ".png")
+      fname2 = paste0("../Plots/Plots_distance_to_rail/", id ,"N_Y", y, ".png")
       w = 6
       ggsave(fname1,
              plot = p1,
