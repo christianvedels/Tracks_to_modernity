@@ -6,11 +6,11 @@
 \toprule
   & Assembly_house & HighSchool & MA_assembly & MA_folkhigh\\
 \midrule
-Connected railway & 0.009225 & -0.01681 & 0.5849$^{***}$ & 0.01778\\
- & (0.02821) & (0.0181) & (0.135) & (0.02197)\\
-N Obs. & 67200 & 67200 & 67200 & 67200\\
-N parishes & 896 & 896 & 896 & 896\\
-Mean of Outcome & 0.1587 & 0.02536 & 4.451 & 0.6949\\
+Connected railway & 0.0392$^{*}$ & 0.003591 & 0.2568$^{**}$ & 0.0292$^{**}$\\
+ & (0.02257) & (0.0111) & (0.1103) & (0.01253)\\
+N Obs. & 66680 & 66680 & 66680 & 66680\\
+N parishes & 889 & 889 & 889 & 889\\
+Mean of Outcome & 0.1792 & 0.03081 & 4.532 & 0.7054\\
 \bottomrule
 \end{tabular}
 \end{table}

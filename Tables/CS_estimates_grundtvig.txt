@@ -6,8 +6,8 @@
 \toprule
   & Assembly house & Folk high school & Density Assembly houses (MA) & Density Folk high schools (MA)\\
 \midrule
-Connected railway & -0.003269 & 0.01582$^{**}$ & 0.1198$^{*}$ & 0.0348$^{***}$\\
- & (0.01358) & (0.006308) & (0.06559) & (0.00724)\\
+Connected railway & -0.003125 & 0.01581$^{**}$ & 0.1192$^{*}$ & 0.03477$^{***}$\\
+ & (0.01453) & (0.006865) & (0.07112) & (0.007749)\\
 N Obs. & 119200 & 119200 & 119200 & 119200\\
 N parishes & 1589 & 1589 & 1589 & 1589\\
 Mean of Outcome & 0.1715 & 0.02945 & 4.464 & 0.7024\\

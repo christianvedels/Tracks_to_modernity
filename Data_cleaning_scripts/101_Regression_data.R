@@ -8,30 +8,30 @@
 library(tidyverse)
 library(foreach)
 library(readxl)
-source("Data_cleaning_scripts/000_Functions.R")
+source("000_Functions.R")
 
 # ==== Load data ====
-railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
-railways_StateTrunk = read_csv2("Data/Panels_by_type/type2_StateTrunk.csv")
-railways_StateNonTrunk = read_csv2("Data/Panels_by_type/type2_StateNonTrunk.csv")
-railways_Private = read_csv2("Data/Panels_by_type/type2_Private.csv")
+railways = read_csv2("../Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
+railways_StateTrunk = read_csv2("../Data/Panels_by_type/type2_StateTrunk.csv")
+railways_StateNonTrunk = read_csv2("../Data/Panels_by_type/type2_StateNonTrunk.csv")
+railways_Private = read_csv2("../Data/Panels_by_type/type2_Private.csv")
 
-Assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv", guess_max = 10000)
-Assembly_houses_MA = read_csv2("Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
+Assembly_houses = read_csv2("../Data/Panel_of_assembly_houses.csv", guess_max = 10000)
+Assembly_houses_MA = read_csv2("../Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
 
-Folk_high_schools = read_csv2("Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
-Folk_high_schools_MA = read_csv2("Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools = read_csv2("../Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools_MA = read_csv2("../Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
 
-census = read_csv2("Data/Census_data.csv", guess_max = 10000)  
+census = read_csv2("../Data/Census_data.csv", guess_max = 10000)  
 
-geo = read_csv2("Data/Geo_info.csv", guess_max = 2000)
+geo = read_csv2("../Data/Geo_info.csv", guess_max = 2000)
 
-distance_to_nodes = read_excel("Data/distance_to_nodes.xlsx")
+distance_to_nodes = read_excel("../Data/distance_to_nodes.xlsx")
 
 # ==== Join different raildata ====
-railways_StateTrunk = railways_StateTrunk %>% select(-type2)
-railways_StateNonTrunk = railways_StateNonTrunk %>% select(-type2)
-railways_Private = railways_Private %>% select(-type2)
+railways_StateTrunk = railways_StateTrunk %>% dplyr::select(-type2)
+railways_StateNonTrunk = railways_StateNonTrunk %>% dplyr::select(-type2)
+railways_Private = railways_Private %>% dplyr::select(-type2)
 
 railways = railways %>% 
   left_join(
@@ -45,7 +45,7 @@ railways = railways %>%
   )
 
 # ==== Load instrument ====
-instrument = read_csv2("Data/Instruments/paramS_scrit_1.csv")
+instrument = read_csv2("../Data/Instruments/paramS_scrit_2.csv") # 2 optimal according to confusion matrices
 
 instrument = instrument %>% 
   rename(
@@ -54,8 +54,8 @@ instrument = instrument %>%
   )
 
 # Forward imputation until 1920
-tmp1901 = instrument %>% filter(Year == 1901)
-years_to_add = 1902:1920
+tmp1901 = instrument %>% filter(Year == 1913)
+years_to_add = 1914:1920
 years_added = foreach(g = tmp1901$GIS_ID, .combine = "bind_rows") %do% {
   res = data.frame(
     Year = years_to_add,
@@ -75,12 +75,12 @@ railways = railways %>%
 # ==== Misc small data juggling ====
 pop1801 = census %>% 
   filter(Year == 1801) %>% 
-  select(GIS_ID, Pop) %>% 
+  dplyr::select(GIS_ID, Pop) %>% 
   rename(Pop1801 = Pop)
 
 pop1787 = census %>% 
   filter(Year == 1787) %>% 
-  select(GIS_ID, Pop) %>% 
+  dplyr::select(GIS_ID, Pop) %>% 
   rename(Pop1787 = Pop)
 
 # ==== Join assembly houses ====
@@ -94,7 +94,7 @@ railways_assembly_houses = railways %>%
     by = c("GIS_ID", "Year")
   ) %>% 
   rename(MA_assembly = MA) %>% 
-  select(-long, -lat) %>% 
+ dplyr::select(-long, -lat) %>% 
   left_join(
     Folk_high_schools %>% mutate(GIS_ID = as.character(GIS_ID)), 
     by = c("GIS_ID", "Year")
@@ -104,8 +104,8 @@ railways_assembly_houses = railways %>%
     by = c("GIS_ID", "Year")
   ) %>% 
   rename(MA_folkhigh = MA) %>% 
-  select(-long, -lat) %>% 
-  select(-Parish) %>% 
+  dplyr::select(-long, -lat) %>% 
+  dplyr::select(-Parish) %>% 
   left_join(geo, by = "GIS_ID") %>% 
   left_join(pop1787, by = "GIS_ID") %>% 
   left_join(pop1801, by = "GIS_ID") %>%
@@ -254,6 +254,13 @@ grundtvig = grundtvig %>%
     county_by_year = paste(County, Year, sep = "_")
   )
 
+###################################################################
+# change NAs to zeros
+grundtvig = grundtvig %>%
+  mutate(
+    LCPAccess = ifelse(is.na(LCPAccess), 0, LCPAccess)
+  )
+##################################################################
 
 # Create Treat_year variable
 grundtvig = grundtvig %>%
@@ -263,6 +270,10 @@ grundtvig = grundtvig %>%
     Treat_year_instr = min_treat_year(Year, LCPAccess)
   ) %>%
   ungroup()
+
+
+
+
 
 # Create treat years for broader groups 
 grundtvig = grundtvig %>% 
@@ -314,9 +325,9 @@ distance_to_nodes = distance_to_nodes %>%
 census = left_join(census, distance_to_nodes, by = "GIS_ID")
 grundtvig = left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
-# ==== Add variable for invalid comparisons (i.e. connected after 1876) ====
+# ==== Add variable for invalid comparisons (i.e. connected after last variation in instrument) ====
 later_connected_GIS_ID = rail_panel %>% 
-  filter(Year > 1876) %>%
+  filter(Year > 1913) %>%
   filter(Year < 1920) %>%
   group_by(GIS_ID) %>%
   summarise(
@@ -326,7 +337,7 @@ later_connected_GIS_ID = rail_panel %>%
   pull(GIS_ID)
 
 earlier_connected_GIS_ID = rail_panel %>% 
-  filter(Year <= 1876) %>%
+  filter(Year <= 1913) %>%
   filter(Year < 1920) %>%
   group_by(GIS_ID) %>%
   summarise(
@@ -351,14 +362,14 @@ invalid_comparison = data.frame(
   mutate(
     invalid_comparison = ifelse(only_connected_later == 1, 1, 0)
   ) %>% 
-  select(GIS_ID, invalid_comparison)
+ dplyr::select(GIS_ID, invalid_comparison)
 
 census = left_join(census, invalid_comparison, by = "GIS_ID")
 grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
 
 # ==== Save data ====
 grundtvig %>% 
-  write_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
+  write_csv2("../Data/REGRESSION_DATA_Grundtvigianism.csv")
 
 census %>% 
-  write_csv2("Data/REGRESSION_DATA_Demography.csv")
+  write_csv2("../Data/REGRESSION_DATA_Demography.csv")

@@ -20,7 +20,7 @@ library(ggrepel)
 
 source("Data_cleaning_scripts/000_Functions.R") # Contains calc_rail()
 
-# ==== Load and merge instruments + finding instrment with best fit (RMSE) ====
+# ==== Load and merge instruments + finding instrument with best fit (RMSE) ====
 # Read files
 real_rail = read_csv2("Data/Panel_of_railways_in_parishes.csv") %>%
   filter(Year < 1877) # filter because instrument only up to 1876
@@ -77,7 +77,7 @@ foreach(data_f = instruments) %do% {
       y = "Actually connected"
     )
   
-  f = paste0("../Plots/Instrument_confusion_matrix/Param_",unique(conf_mat$parameter), ".png")
+  f = paste0("Plots/Instrument_confusion_matrix/Param_",unique(conf_mat$parameter), ".png")
   
   ggsave(f, plot = p1, width = 8, height = 6)
   

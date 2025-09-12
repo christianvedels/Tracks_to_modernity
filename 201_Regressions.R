@@ -12,7 +12,7 @@ library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Params ====
-CONTROLS = "Dist_hamb_year + Dist_cph_year + Dist_ox_year + Pop1801_year + county_by_year" # These are decile by year FE
+CONTROLS = "Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year" # These are decile by year FE, now excluded: Dist_ox_year
 NSIGNIF = 4 # Significant digits in all tables
 
 # ==== Load data ====
