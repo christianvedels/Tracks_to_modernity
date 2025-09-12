@@ -325,9 +325,9 @@ distance_to_nodes = distance_to_nodes %>%
 census = left_join(census, distance_to_nodes, by = "GIS_ID")
 grundtvig = left_join(grundtvig, distance_to_nodes, by = "GIS_ID")
 
-# ==== Add variable for invalid comparisons (i.e. connected after 1876) ====
+# ==== Add variable for invalid comparisons (i.e. connected after last variation in instrument) ====
 later_connected_GIS_ID = rail_panel %>% 
-  filter(Year > 1876) %>%
+  filter(Year > 1913) %>%
   filter(Year < 1920) %>%
   group_by(GIS_ID) %>%
   summarise(
@@ -337,7 +337,7 @@ later_connected_GIS_ID = rail_panel %>%
   pull(GIS_ID)
 
 earlier_connected_GIS_ID = rail_panel %>% 
-  filter(Year <= 1876) %>%
+  filter(Year <= 1913) %>%
   filter(Year < 1920) %>%
   group_by(GIS_ID) %>%
   summarise(
