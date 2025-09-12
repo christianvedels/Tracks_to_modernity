@@ -69,6 +69,13 @@ manual_towns <- tibble(
 nodes <- bind_rows(mt, manual_towns) %>%
   filter(!Market_town %in% c("Mariager", "Ærøskøbing", "Stege")) #market towns not connected to rail (1916)
 
+
+# safe nodes
+nodes_sub <- nodes %>%
+  dplyr::select(GIS_ID, Market_town, display_name, lat, long)
+
+write_xlsx(nodes_sub, "../Data/nodes.xlsx")
+
 # -------------
 
 # Obtain elevation raster (from OpenStreetMap)
