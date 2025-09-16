@@ -178,9 +178,9 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ))
 
 # Have a look
-etable(twfe_models, 
-       fitstat = ~ n + my, 
-       keep = "Connected_railway")
+#etable(twfe_models, 
+#       fitstat = ~ n + my, 
+#       keep = "Connected_railway")
 
 #############################################################
 # === Callaway and Sant’Anna Regressions, With controls === #
@@ -207,10 +207,10 @@ names(cs_aggs)   <- dep_vars
 
 
 # Print all summaries one by one
-for (nm in names(cs_aggs)) {
-  cat("\n=== ", nm, " ===\n")
-  print(summary(cs_aggs[[nm]]))
-}
+#for (nm in names(cs_aggs)) {
+#  cat("\n=== ", nm, " ===\n")
+#  print(summary(cs_aggs[[nm]]))
+#}
 
 ################################
 # === Prepare Output Table === #
