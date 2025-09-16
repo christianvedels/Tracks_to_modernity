@@ -164,7 +164,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
   data = census, cluster = ~ GIS_ID
 ))
 
-# Have a look at results
+# Have a look
 etable(twfe_models, 
        fitstat = ~ n + my, 
        keep = "Connected_railway")
