@@ -174,7 +174,7 @@ etable(twfe_models,
 # === Callaway and Sant’Anna Regressions, With controls === #
 #############################################################
 
-# Estimate all models
+# Estimate models
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
