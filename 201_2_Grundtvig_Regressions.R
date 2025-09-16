@@ -199,7 +199,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
 ))
 
 # Aggregate into overall ATTs
-cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple", na.rm = TRUE))
 
 # Name the lists for easy reference
 names(cs_models) <- dep_vars
