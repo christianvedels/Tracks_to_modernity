@@ -33,12 +33,13 @@ starify <- function(est, pval){
   sprintf("%.4f$^{%s}$", est, stars)
 }
 
+# Dependent variables
+dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
+              "lnNotAgriculture", "HISCAM_avg", "lnMigration")
+
 #########################################
 # === TWFE Regressions, No controls === #
 #########################################
-
-dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
-              "lnNotAgriculture", "HISCAM_avg", "lnMigration")
 
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
