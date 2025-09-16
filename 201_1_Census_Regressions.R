@@ -2,7 +2,7 @@
 #
 # Date updated:   2025-09-11
 # Author:         Tom Görges
-# Purpose:        Runs regressions
+# Purpose:        Runs Census regressions
 
 rm(list = ls())
 
@@ -12,15 +12,12 @@ library(tidyverse)
 library(fixest)
 library(did)
 library(kableExtra) # for latex tables
-source("Data_cleaning_scripts/000_Functions.R")
+library(broom)
 
-# ==== Params ====
-CONTROLS = "Dist_hamb_year + Dist_cph_year + Dist_ox_year + Pop1801_year + county_by_year" # These are decile by year FE
-NSIGNIF = 4 # Significant digits in all tables
+source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
-grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
 
 # ==== Renaming =====
 census = census %>% rename(
@@ -28,160 +25,283 @@ census = census %>% rename(
   Connected_lcp = LCPAccess
 )
 
-### TWFE CENSUS No controls ===============================================================
-
-mod1 <- feols(
-  lnPopulation ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-mod2 <- feols(
-  lnChild_women_ratio ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-mod3 <- feols(
-  lnManufacturing ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-mod4 <- feols(
-  lnNotAgriculture ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-mod5 <- feols(
-  HISCAM_avg ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-mod6 <- feols(
-  lnMigration ~ Connected_railway  |
-    GIS_ID + Year,
-  data = census,
-  cluster = ~ GIS_ID
-)
-
-
-etable(mod1, mod2, mod3, mod4, mod5, mod6,
-       fitstat = ~ n + my)
-
-
-### CENSUS Callaway and ST Anna
-
-cs_mod1 = att_gt(
-  yname = "lnPopulation",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
-  xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
-  control_group = "notyettreated"
-)
-
-# Aggregate into one overall ATT
-agg_simple1 = aggte(cs_mod1, type = "simple")
-
+# function to add stars
+starify <- function(est, pval){
+  stars <- ifelse(pval < 0.01, "***",
+                  ifelse(pval < 0.05, "**",
+                         ifelse(pval < 0.1, "*", "")))
+  sprintf("%.4f$^{%s}$", est, stars)
+}
 
 #########################################
-cs_mod2 = att_gt(
-  yname = "lnChild_women_ratio",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
-  xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
-  control_group = "notyettreated"
-)
-
-# Aggregate into one overall ATT
-agg_simple2 = aggte(cs_mod2, type = "simple")
-
+# === TWFE Regressions, No controls === #
 #########################################
-cs_mod3 = att_gt(
-  yname = "lnManufacturing",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
+
+dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
+              "lnNotAgriculture", "HISCAM_avg", "lnMigration")
+
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
+  data = census, cluster = ~ GIS_ID
+))
+
+# Have a look at results
+etable(twfe_models, fitstat = ~ n + my)
+
+
+###########################################################
+# === Callaway and Sant’Anna Regressions, no controls === #
+###########################################################
+
+# Estimate all models
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year",      
   xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
+  data    = census,        
+  clustervars   = "GIS_ID",
   control_group = "notyettreated"
+))
+
+# Aggregate into overall ATTs
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+
+# Name the lists for easy reference
+names(cs_models) <- dep_vars
+names(cs_aggs)   <- dep_vars
+
+
+# Print all summaries one by one
+for (nm in names(cs_aggs)) {
+  cat("\n=== ", nm, " ===\n")
+  print(summary(cs_aggs[[nm]]))
+}
+
+
+################################
+# === Prepare Output Table === #
+################################
+
+# Extract results from Callaway and St Anna
+cs_results <- extract_res(cs_aggs, grouped = FALSE)
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("log(Pop.)","log(Child women ratio)","log(Manufacturing+1)",
+                "log(Not Agriculture+1)","HISCAM avg","log(Migration)"),
+  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
+                     sapply(twfe_tidy, \(x) x$p.value[1])),
+  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
+  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
+  cs_se     = sprintf("(%.4f)", cs_results$SE),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
+  obs_cs    = cs_results$n
 )
 
-# Aggregate into one overall ATT
-agg_simple3 = aggte(cs_mod3, type = "simple")
+# create and store latex table
+sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_development.tex")
+
+cat("\\begin{tabular}{lcccccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & log(Pop.) & log(Child women ratio) & log(Manufacturing+1) & log(Not Agriculture+1) & HISCAM avg & log(Migration) \\\\\n")
+cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
+cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$twfe_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$twfe_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse=" & "),
+    " \\\\\n")   # <-- TWFE means here
+cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$cs_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$cs_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_cs, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_cs, collapse=" & "),
+    " \\\\\n")   # <-- CS means here
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+sink()
 
 
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 
-#########################################
-cs_mod4 = att_gt(
-  yname = "lnNotAgriculture",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
-  xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
+###########################################
+# === TWFE Regressions, With controls === #
+###########################################
+
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year | GIS_ID + Year")),
+  data = census, cluster = ~ GIS_ID
+))
+
+# Have a look at results
+etable(twfe_models, 
+       fitstat = ~ n + my, 
+       keep = "Connected_railway")
+
+
+#############################################################
+# === Callaway and Sant’Anna Regressions, With controls === #
+#############################################################
+
+# Estimate all models
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year",      
+  xformla = ~ Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year, 
+  data    = census,        
+  clustervars   = "GIS_ID",
   control_group = "notyettreated"
+))
+
+# Aggregate into overall ATTs
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+
+# Name the lists for easy reference
+names(cs_models) <- dep_vars
+names(cs_aggs)   <- dep_vars
+
+
+# Print all summaries one by one
+for (nm in names(cs_aggs)) {
+  cat("\n=== ", nm, " ===\n")
+  print(summary(cs_aggs[[nm]]))
+}
+
+
+################################
+# === Prepare Output Table === #
+################################
+
+# Extract results from Callaway and St Anna
+cs_results <- extract_res(cs_aggs, grouped = FALSE)
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("log(Pop.)","log(Child women ratio)","log(Manufacturing+1)",
+                "log(Not Agriculture+1)","HISCAM avg","log(Migration)"),
+  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
+                     sapply(twfe_tidy, \(x) x$p.value[1])),
+  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
+  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
+  cs_se     = sprintf("(%.4f)", cs_results$SE),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
+  obs_cs    = cs_results$n
 )
 
-# Aggregate into one overall ATT
-agg_simple4 = aggte(cs_mod4, type = "simple")
+# create and store latex table
+sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_development_controls.tex")
+
+cat("\\begin{tabular}{lcccccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & log(Pop.) & log(Child women ratio) & log(Manufacturing+1) & log(Not Agriculture+1) & HISCAM avg & log(Migration) \\\\\n")
+cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
+cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$twfe_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$twfe_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse=" & "),
+    " \\\\\n")   # <-- TWFE means here
+cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$cs_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$cs_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_cs, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_cs, collapse=" & "),
+    " \\\\\n")   # <-- CS means here
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+sink()
 
 
-#########################################
-cs_mod5 = att_gt(
-  yname = "HISCAM_avg",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
-  xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
-  control_group = "notyettreated"
-)
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 
-# Aggregate into one overall ATT
-agg_simple5 = aggte(cs_mod5, type = "simple")
+##########################################
+# === TWFE Regressions, Instrumented === #
+##########################################
 
+# exclude nodes
+census_iv <- census %>%
+  filter(away_from_node == 1)
 
-#########################################
-cs_mod6 = att_gt(
-  yname = "lnMigration",    
-  tname = "Year_num",        
-  idname = "GIS_ID_num",     
-  gname = "Treat_year",      
-  xformla = ~1, 
-  data = census,        
-  clustervars = "GIS_ID",
-  control_group = "notyettreated"
-)
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp")),
+  data = census_iv, cluster = ~ GIS_ID
+))
 
-# Aggregate into one overall ATT
-agg_simple6 = aggte(cs_mod6, type = "simple")
+# Have a look at results
+etable(twfe_models, 
+       fitstat = ~ n + my, 
+       keep = "Connected_railway")
 
 
-###################
 
-summary(agg_simple1)
-summary(agg_simple2)
-summary(agg_simple3)
-summary(agg_simple4)
-summary(agg_simple5)
-summary(agg_simple6)
+
+
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+
 
 # Dynamic effects
 dyn1 = aggte(cs_mod1, type = "dynamic")
