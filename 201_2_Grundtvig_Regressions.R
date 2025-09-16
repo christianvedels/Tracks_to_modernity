@@ -1,8 +1,11 @@
 # Regressions
 #
-# Date updated:   2025-02-13
-# Author:         Christian Vedel, Tom Görges
-# Purpose:        Runs regressions
+# Date updated:   2025-09-16
+# Author:         Tom Görges
+# Purpose:        Runs Grundtvig regressions
+
+rm(list = ls())
+
 
 # ==== Libraries ====
 library(tidyverse)
@@ -11,25 +14,18 @@ library(did)
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
-# ==== Params ====
-CONTROLS = "Dist_hamb_year + Dist_cph_year + Dist_ox_year + Pop1801_year + county_by_year" # These are decile by year FE
-NSIGNIF = 4 # Significant digits in all tables
-
 # ==== Load data ====
-census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 grundtvig = read_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv", guess_max = 100000)
-rail_panel = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 100000)
 
 # ==== Renaming =====
-
 grundtvig = grundtvig %>% rename(
   Connected_railway = RailAccess,
   Connected_lcp = LCPAccess
 )
 
 # Only same GIS_IDs
-census = census %>% filter(GIS_ID %in% grundtvig$GIS_ID)
-grundtvig = grundtvig %>% filter(GIS_ID %in% census$GIS_ID)
+#census = census %>% filter(GIS_ID %in% grundtvig$GIS_ID)
+#grundtvig = grundtvig %>% filter(GIS_ID %in% census$GIS_ID)
 
 # Zeros are NAs in MA
 grundtvig = grundtvig %>% mutate(
@@ -43,7 +39,26 @@ grundtvig = grundtvig %>% mutate(
   )
 )
 
-colnames(grundtvig)
+
+#########################################
+# === TWFE Regressions, No controls === #
+#########################################
+
+dep_vars <- c("Assembly_house", "HighSchool", "MA_assembly", "MA_folkhigh")
+
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
+  data = census, cluster = ~ GIS_ID
+))
+
+# Have a look at results
+etable(twfe_models, fitstat = ~ n + my)
+
+
+# ---------------------------------------------------
+# ---------------------------------------------------
+# ---------------------------------------------------
+
 
 # ==== TWFE regressions (Grundtvig data) ====
 mod1 <- feols(
