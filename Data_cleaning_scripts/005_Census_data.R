@@ -9,7 +9,9 @@ library(tidyverse)
 library(hisco)
 
 # ==== Load data ====
-load("../../Data not redistributable/All_raw_data_for_project.Rdata")
+load("../Data not redistributable/All_raw_data_for_project.Rdata")
+
+hisco_incomes = read_csv("Data/HISCO_coded_income.csv")
 
 # ==== Select variables ====
 clean_census = popdata %>% 
@@ -78,7 +80,25 @@ hisco = hisco %>% mutate(
   hiscam5 = hisco_to_ses(hisco5, ses = "hiscam_u1")
 )
 
+# Add HISCO incomes
+hisco_incomes %>% 
+  mutate(hisco_1 = as.numeric(hisco_1)) %>%
+  group_by(hisco_1) %>% # Weighted by count 'Antal'
+  summarise(
+    income = weighted.mean(Gns._Indtægt_kr, `Antal (1916)`, na.rm = TRUE)
+  ) -> hisco_income_mean
 
+hisco = hisco %>%
+  left_join(hisco_income_mean, by = c("hisco1" = "hisco_1")) %>%
+  rename(hisco_income_1 = income) %>%
+  left_join(hisco_income_mean, by = c("hisco2" = "hisco_1")) %>%
+  rename(hisco_income_2 = income) %>%
+  left_join(hisco_income_mean, by = c("hisco3" = "hisco_1")) %>%
+  rename(hisco_income_3 = income) %>%
+  left_join(hisco_income_mean, by = c("hisco4" = "hisco_1")) %>%
+  rename(hisco_income_4 = income) %>%
+  left_join(hisco_income_mean, by = c("hisco5" = "hisco_1")) %>%
+  rename(hisco_income_5 = income)
 
 # Aggregate at the parish level
 mean0 = function(x){
@@ -90,11 +110,13 @@ hisco = hisco %>%
   # sample_n(10000) %>% 
   rowwise() %>% 
   mutate(
-    hiscam_avg = mean0(c(hiscam1, hiscam2, hiscam3, hiscam4, hiscam5))
+    hiscam_avg = mean0(c(hiscam1, hiscam2, hiscam3, hiscam4, hiscam5)),
+    income_avg = mean0(c(hisco_income_1, hisco_income_2, hisco_income_3, hisco_income_4, hisco_income_5))
   ) %>% 
   group_by(Year, GIS_ID) %>% 
   summarise(
-    hiscam_avg = mean0(hiscam_avg)
+    hiscam_avg = mean0(hiscam_avg),
+    income_avg = mean0(income_avg)
   )
 
 # ==== Join on ses scores ====
