@@ -79,7 +79,7 @@ write_xlsx(nodes_sub, "../Data/nodes.xlsx")
 # -------------
 
 # Obtain elevation raster (from OpenStreetMap)
-denmark_elev = get_elev_raster(outline_dk, z = 7, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
+denmark_elev = get_elev_raster(outline_dk, z = 8, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
 # ==== Plot elev ====
 plot(denmark_elev)
