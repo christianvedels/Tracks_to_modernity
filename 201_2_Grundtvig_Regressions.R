@@ -96,6 +96,60 @@ for (nm in names(cs_aggs)) {
   print(summary(cs_aggs[[nm]]))
 }
 
+####################################################
+# === Decompositions: Group, Calendar, Dynamic === #
+####################################################
+
+# Run all decompositions for each outcome
+cs_decomp <- lapply(cs_models, function(m) {
+  list(
+    group    = aggte(m, type = "group"),
+    calendar = aggte(m, type = "calendar"),
+    dynamic = aggte(m, type = "dynamic")
+  )
+})
+
+# Name lists
+names(cs_decomp) <- dep_vars
+
+#########################
+# === Dynamic plots === #
+#########################
+
+# create plots
+plots <- lapply(names(cs_decomp), function(v) {
+  base_plot <- ggdid(cs_decomp[[v]]$dynamic)
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 4) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, size = 1.5) +
+    scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Years since treatment",
+      y = NULL,
+      title = NULL,
+      color = NULL,
+      fill  = "Confidence Interval"
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[1]]
+
+# ----------
+
+
+
+
+
+
+# ------------
+
+
 ################################
 # === Prepare Output Table === #
 ################################
