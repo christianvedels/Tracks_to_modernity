@@ -79,7 +79,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   xformla = ~1, 
   data    = grundtvig,        
   clustervars   = "GIS_ID",
-  control_group = "notyettreated"
+  control_group = "nevertreated"
 ))
 
 # Aggregate into overall ATTs
