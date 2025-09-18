@@ -60,8 +60,8 @@ mt = read_csv2(path, guess_max = 2000) %>%
 
 # Add Esbjerg and Struer
 manual_towns <- tibble(
-  Market_town = c("Esbjerg", "Struer", "Skjern"),
-  GIS_ID = c("1387", "1321", "180108")) %>%
+  Market_town = c("Esbjerg", "Struer"),
+  GIS_ID = c("1387", "1321")) %>%
   geocode(address = Market_town, method = "osm", custom_query = list(countrycodes = 'dk'), full_results = T)
 
 
@@ -238,9 +238,7 @@ opening_years <- tribble(
   "Skive, Skive",      "Struer",              1865,
   "Struer",            "Thisted",             1882,
   "Ringkøbing (2387702632)", "Lemvig",        1879,
-  "Ringkøbing (2387702632)", "Skjern",        1875, 
-  "Skjern",            "Varde",               1875,
-  "Skjern",            "Skanderborg",         1882,
+  "Ringkøbing (2387702632)", "Varde",         1875, 
   "Esbjerg",           "Varde",               1874,
   "Aalborg",           "Thisted",             1904,
   "Glyngoere",         "Skive, Skive",        1884,
