@@ -6,7 +6,6 @@
 
 rm(list = ls())
 
-
 # ==== Libraries ====
 library(tidyverse)
 library(fixest)
@@ -24,6 +23,12 @@ census = census %>% rename(
   Connected_railway = RailAccess,
   Connected_lcp = LCPAccess
 )
+
+census <- census %>%
+  mutate(
+    Year_num = ifelse(Year_num == 1901, 1900, Year_num),
+    Treat_year = ifelse(Treat_year == 1901, 1900, Treat_year)
+  )
 
 # function to add stars
 starify <- function(est, pval){
@@ -79,7 +84,6 @@ for (nm in names(cs_aggs)) {
   cat("\n=== ", nm, " ===\n")
   print(summary(cs_aggs[[nm]]))
 }
-
 
 ################################
 # === Prepare Output Table === #
@@ -151,10 +155,150 @@ cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 sink()
 
+####################################################
+# === Decompositions: Group, Calendar, Dynamic === #
+####################################################
 
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
+# Run all decompositions for each outcome
+cs_decomp <- lapply(cs_models, function(m) {
+  list(
+    group    = aggte(m, type = "group"),
+    calendar = aggte(m, type = "calendar"),
+    dynamic = aggte(m, type = "dynamic")
+  )
+})
+
+# Name lists
+names(cs_decomp) <- dep_vars
+
+#########################
+# === Dynamic plots === #
+#########################
+
+# create plots
+plots <- lapply(names(cs_decomp), function(v) {
+  base_plot <- ggdid(cs_decomp[[v]]$dynamic)
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 8) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, size = 2) +
+    scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    scale_x_continuous(
+      limits = c(-45, 45),
+      breaks = seq(-40, 40, by = 20)
+      ) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Years since treatment",
+      y = NULL,
+      title = NULL,
+      color = NULL,
+      fill  = "Confidence Interval"
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[1]]
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_dynamic", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
+##########################
+# === Calendar plots === #
+##########################
+
+# create plots
+plots <- lapply(names(cs_decomp), function(v) {
+  base_plot <- ggdid(cs_decomp[[v]]$calendar)
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 8) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 3, size = 2) +
+    scale_color_manual(values = c("1" = colours$red, "2" = colours$black)) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Year",
+      y = NULL,
+      title = NULL,
+      color = NULL,
+      fill  = "Confidence Interval"
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[1]]
+
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_calendar", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
+#######################
+# === Group plots === #
+#######################
+
+
+# === Group plots === #
+plots <- lapply(names(cs_decomp), function(v) {
+  gobj <- cs_decomp[[v]]$group
+  dat <- data.frame(
+    group = gobj$egt,
+    att   = gobj$att.egt,
+    se    = gobj$se.egt
+  )
+  
+  ggplot(dat, aes(x = att, y = factor(group), color = factor(group))) +
+    geom_point(size = 8, color = colours$red) +
+    geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se),
+                   height = 0.4, size = 2, color = colours$red) +
+    geom_vline(xintercept = 0, linetype = "dashed",  # ← swapped
+               color = "grey40", size = 2) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Effect",
+      y = "Group",
+      color = NULL
+    ) +
+    theme(legend.position = "none")
+})
+
+
+# View the first one
+plots[[1]]
+
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_group", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
 
 ###########################################
 # === TWFE Regressions, With controls === #
@@ -272,10 +416,6 @@ cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 sink()
 
-
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
 
 ##########################################
 # === TWFE Regressions, Instrumented === #
@@ -414,40 +554,6 @@ cat("\\end{tabular}\n")
 sink()
 
 
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
-
-
-# Dynamic effects
-dyn1 = aggte(cs_mod1, type = "dynamic")
-dyn2 = aggte(cs_mod2, type = "dynamic")
-dyn3 = aggte(cs_mod3, type = "dynamic")
-dyn4 = aggte(cs_mod4, type = "dynamic")
-dyn5 = aggte(cs_mod5, type = "dynamic")
-dyn6 = aggte(cs_mod6, type = "dynamic")
-
-# Plots
-p1 = ggdid(dyn1) + ggtitle("lnPopulation")
-p2 = ggdid(dyn2) + ggtitle("lnChild_women_ratio")
-p3 = ggdid(dyn3) + ggtitle("lnManufacturing")
-p4 = ggdid(dyn4) + ggtitle("lnNotAgriculture")
-p5 = ggdid(dyn5) + ggtitle("HISCAM_avg")
-p6 = ggdid(dyn6) + ggtitle("lnMigration")
-
-# Display one by one
-print(p1)
-print(p2)
-print(p3)
-print(p4)
-print(p5)
-print(p6)
-
-# Or, if you want them combined in a grid:
-library(gridExtra)
-grid.arrange(p1, p2, p3, p4, p5, p6, ncol = 2)
-
-# and other decompositions
 
 
 
