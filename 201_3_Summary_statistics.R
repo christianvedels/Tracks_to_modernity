@@ -43,10 +43,13 @@ outcomeNames = function(x){
     x == "lnPopulation" ~ "log(Population)",
     x == "lnpop1801" ~ "log(Population 1801)",	
     x == "lnChild_women_ratio" ~ "log(Child-women ratio + 1)",
+    x == "Child_women_ratio" ~ "Child-women ratio",
     x == "lnManufacturing" ~ "log(Manufacturing + 1)",
     x == "lnNotAgriculture" ~ "log(Not agriculture + 1)",
-    x == "HISCAM_avg" ~ "HISCAM_avg",
+    x == "HISCAM_avg" ~ "HISCAM avg",
     x == "lnMigration" ~ "log(Migration)",
+    x == "Connected_railway" ~ "Connected railway",
+    x == "Connected_lcp" ~ "Connected LCP",
     x == "dist_hmb" ~ "Distance to Hamburg",
     x == "dist_cph" ~ "Distance to Copenhagen",
     x == "Boulder_clay_pct" ~ "Boulder clay (%)",
@@ -61,6 +64,8 @@ outcomeNames_grundtvig = function(x){
   case_when(
     x == "Assembly_house" ~ "Assembly house",
     x == "HighSchool" ~ "Folk high school",
+    x == "Connected_railway" ~ "Connected railway",
+    x == "Connected_lcp" ~ "Connected LCP",
     x == "MA_assembly" ~ "Density Assembly houses (MA)",
     x == "MA_folkhigh" ~ "Density Folk high schools (MA)",
     TRUE ~ x
@@ -138,8 +143,6 @@ summary_tables = function() {
   sink()
   print(sum_tex)
 }
-
-
 
 
 summary_tables()
