@@ -8,6 +8,7 @@
 # ==== Libraries ====
 library(tidyverse)
 library(fixest)
+library(sf)
 
 # ==== Load data ====
 assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv")
@@ -90,13 +91,13 @@ mod2 = feols(
 # Coops
 # Parish level
 mod3 = feols(
-    Coop ~ Connected_rail + Assembly_house, data = cross_section,
+    Coop ~ Connected_rail * Assembly_house, data = cross_section,
     cluster = ~GIS_ID
 )
 
 # Hundred level
 mod4 = fepois(
-    Coop ~ Connected_rail + Assembly_house, data = cross_section_herred
+    Coop ~ Connected_rail * Assembly_house, data = cross_section_herred
 )
 
 etable(
