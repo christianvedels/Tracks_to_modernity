@@ -67,11 +67,23 @@ cross_section_herred = cross_section %>%
 # ==== Descriptive statistics ====
 p1 = cross_section_herred %>%
     ggplot(aes(Assembly_house, Coop)) + geom_point() + geom_smooth(method = "lm") + 
-    theme_bw()
+    theme_bw() +
+  labs(
+    x = "Assembly Houses",
+    y = "Cooperative Creameries"
+  )
+
+p1
 
 p2 = cross_section_herred %>%
     ggplot(aes(Connected_rail, Coop)) + geom_point() + geom_smooth(method = "lm") + 
-    theme_bw()
+    theme_bw() +
+  labs(
+    x = "Connected Parishes",
+    y = "Cooperative Creameries"
+  )
+
+p2
 
 ggsave("Plots/Assembly_houses_vs_coops.png", p1, width = 4, height = 3)
 ggsave("Plots/Connected_rail_vs_coops.png", p2, width = 4, height = 3)
