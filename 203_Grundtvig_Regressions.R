@@ -79,7 +79,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   xformla = ~1, 
   data    = grundtvig,        
   clustervars   = "GIS_ID",
-  control_group = "notyettreated"
+  control_group = "nevertreated"
 ))
 
 # Aggregate into overall ATTs
@@ -175,10 +175,12 @@ sink()
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
   list(
+    group    = aggte(m, type = "group"),
     calendar = aggte(m, type = "calendar"),
-    dynamic = aggte(m, type = "dynamic")
+    dynamic  = aggte(m, type = "dynamic")
   )
 })
+
 
 # Name lists
 names(cs_decomp) <- dep_vars
@@ -311,7 +313,7 @@ for (i in seq_along(plots)) {
 ###########################################
 
 twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year | GIS_ID + Year")),
+  as.formula(paste0(y, " ~ Connected_railway + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year + Dist_ox_year | GIS_ID + Year")),
   data = grundtvig, cluster = ~ GIS_ID
 ))
 
@@ -330,10 +332,10 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   tname   = "Year_num",        
   idname  = "GIS_ID_num",     
   gname   = "Treat_year",      
-  xformla = ~ Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year,  
+  xformla = ~ dist_hmb + dist_cph + Pop1801 + county_by_year + DistOxRoad,  
   data    = grundtvig,        
   clustervars   = "GIS_ID",
-  control_group = "notyettreated"
+  control_group = "nevertreated"
 ))
 
 # Aggregate into overall ATTs
@@ -474,7 +476,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   xformla = ~1, 
   data    = grundtvig_iv,        
   clustervars   = "GIS_ID",
-  control_group = "notyettreated"
+  control_group = "nevertreated"
 ))
 
 # Aggregate into overall ATTs
