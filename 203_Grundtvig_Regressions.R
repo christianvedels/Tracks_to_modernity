@@ -280,7 +280,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   control_group = "nevertreated"
 ))
 
-# Run all decompositions for each outcome
+# Run group decomposition
 cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group")
