@@ -168,14 +168,14 @@ cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
 sink()
 
-####################################################
-# === Decompositions: Group, Calendar, Dynamic === #
-####################################################
+#############################################
+# === Decompositions: Calendar, Dynamic === #
+#############################################
 
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
   list(
-    group    = aggte(m, type = "group"),
+    #group    = aggte(m, type = "group"),
     calendar = aggte(m, type = "calendar"),
     dynamic  = aggte(m, type = "dynamic")
   )
@@ -264,9 +264,32 @@ for (i in seq_along(plots)) {
   )
 }
 
-#######################
-# === Group plots === #
-#######################
+################################
+# === Group plots (decade) === #
+################################
+
+# Re-Estimate models with decade treatment
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year_broad", # decade      
+  xformla = ~1, 
+  data    = grundtvig,        
+  clustervars   = "GIS_ID",
+  control_group = "nevertreated"
+))
+
+# Run group decomposition
+cs_decomp <- lapply(cs_models, function(m) {
+  list(
+    group    = aggte(m, type = "group")
+  )
+})
+
+
+# Name lists
+names(cs_decomp) <- dep_vars
 
 # === Group plots === #
 plots <- lapply(names(cs_decomp), function(v) {
@@ -280,7 +303,7 @@ plots <- lapply(names(cs_decomp), function(v) {
   ggplot(dat, aes(x = att, y = factor(group), color = factor(group))) +
     geom_point(size = 4, color = colours$red) +
     geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se),
-                   height = 0.4, size = 1, color = colours$red) +
+                   height = 0.4, size = 1.5, color = colours$red) +
     geom_vline(xintercept = 0, linetype = "dashed",  # ← swapped
                color = "grey40", size = 2) +
     theme_minimal(base_size = 30) +
@@ -294,7 +317,7 @@ plots <- lapply(names(cs_decomp), function(v) {
 
 
 # View the first one
-plots[[2]]
+plots[[4]]
 
 
 # Save plots with names p1_varname, p2_varname, ...
@@ -304,7 +327,7 @@ for (i in seq_along(plots)) {
   ggsave(
     filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_group", filename),
     plot = plots[[i]],
-    width = dims$width*1, height = dims$height*4, dpi = 300
+    width = dims$width*1, height = dims$height*1, dpi = 300
   )
 }
 
