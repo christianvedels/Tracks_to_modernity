@@ -168,9 +168,9 @@ cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
 sink()
 
-####################################################
-# === Decompositions: Group, Calendar, Dynamic === #
-####################################################
+#############################################
+# === Decompositions: Calendar, Dynamic === #
+#############################################
 
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
@@ -264,16 +264,16 @@ for (i in seq_along(plots)) {
   )
 }
 
-#######################
-# === Group plots === #
-#######################
+################################
+# === Group plots (decade) === #
+################################
 
 # Re-Estimate models with decade treatment
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
   idname  = "GIS_ID_num",     
-  gname   = "Treat_year_broad",      
+  gname   = "Treat_year_broad", # decade      
   xformla = ~1, 
   data    = grundtvig,        
   clustervars   = "GIS_ID",
