@@ -455,8 +455,8 @@ sink()
 cs_decomp <- lapply(cs_models, function(m) {
   list(
     #group    = aggte(m, type = "group"),
-    calendar = aggte(m, type = "calendar"),
-    dynamic  = aggte(m, type = "dynamic")
+    calendar = aggte(m, type = "calendar", na.rm = T),
+    dynamic  = aggte(m, type = "dynamic", na.rm = T)
   )
 })
 
