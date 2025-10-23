@@ -447,6 +447,170 @@ cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
 sink()
 
+###########################################################
+# === Decompositions with controls: Calendar, Dynamic === #
+###########################################################
+
+# Run all decompositions for each outcome
+cs_decomp <- lapply(cs_models, function(m) {
+  list(
+    #group    = aggte(m, type = "group"),
+    calendar = aggte(m, type = "calendar", na.rm = T),
+    dynamic  = aggte(m, type = "dynamic", na.rm = T)
+  )
+})
+
+
+# Name lists
+names(cs_decomp) <- dep_vars
+
+#########################
+# === Dynamic plots === #
+#########################
+
+# create plots
+plots <- lapply(names(cs_decomp), function(v) {
+  base_plot <- ggdid(cs_decomp[[v]]$dynamic)
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 4) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, size = 1) +
+    scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Years since treatment",
+      y = NULL,
+      title = NULL,
+      color = NULL,
+      fill  = "Confidence Interval"
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[3]]
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_dynamic_controls", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
+##########################
+# === Calendar plots === #
+##########################
+
+# create plots
+plots <- lapply(names(cs_decomp), function(v) {
+  base_plot <- ggdid(cs_decomp[[v]]$calendar)
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 4) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, size = 1) +
+    scale_color_manual(values = c("1" = colours$red, "2" = colours$black)) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Year",
+      y = NULL,
+      title = NULL,
+      color = NULL,
+      fill  = "Confidence Interval"
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[4]]
+
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_calendar_controls", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
+################################
+# === Group plots (decade) === #
+################################
+
+# Re-Estimate models with decade treatment
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year_broad", # decade      
+  xformla = ~ dist_hmb + dist_cph + Pop1801 + county_by_year + DistOxRoad, 
+  data    = grundtvig,        
+  clustervars   = "GIS_ID",
+  control_group = "nevertreated"
+))
+
+# Run group decomposition
+cs_decomp <- lapply(cs_models, function(m) {
+  list(
+    group    = aggte(m, type = "group")
+  )
+})
+
+
+# Name lists
+names(cs_decomp) <- dep_vars
+
+# === Group plots === #
+plots <- lapply(names(cs_decomp), function(v) {
+  gobj <- cs_decomp[[v]]$group
+  dat <- data.frame(
+    group = gobj$egt,
+    att   = gobj$att.egt,
+    se    = gobj$se.egt
+  )
+  
+  ggplot(dat, aes(x = att, y = factor(group), color = factor(group))) +
+    geom_point(size = 4, color = colours$red) +
+    geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se),
+                   height = 0.4, size = 1.5, color = colours$red) +
+    geom_vline(xintercept = 0, linetype = "dashed",  # ← swapped
+               color = "grey40", size = 2) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Effect",
+      y = "Group",
+      color = NULL
+    ) +
+    theme(legend.position = "none")
+})
+
+
+# View the first one
+plots[[4]]
+
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_group_controls", filename),
+    plot = plots[[i]],
+    width = dims$width*1, height = dims$height*1, dpi = 300
+  )
+}
+
+
 
 ##########################################
 # === TWFE Regressions, Instrumented === #
