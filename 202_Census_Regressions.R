@@ -1,6 +1,6 @@
 # Regressions
 #
-# Date updated:   2025-09-16
+# Date updated:   2025-10-27
 # Author:         Tom Görges
 # Purpose:        Runs Census regressions
 
@@ -18,7 +18,7 @@ source("Data_cleaning_scripts/000_Functions.R")
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 
-# ==== Renaming =====
+# === Data preparation ===
 census = census %>% rename(
   Connected_railway = RailAccess,
   Connected_lcp = LCPAccess
@@ -31,9 +31,7 @@ census <- census %>%
     Treat_year = ifelse(Treat_year == 1901, 1900, Treat_year)
   )
 
-
-
-# Dependent variables
+# Define dependent variables
 dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
               "lnNotAgriculture", "HISCAM_avg", "lnMigration")
 
