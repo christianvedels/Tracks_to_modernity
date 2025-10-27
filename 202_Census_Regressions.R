@@ -31,13 +31,7 @@ census <- census %>%
     Treat_year = ifelse(Treat_year == 1901, 1900, Treat_year)
   )
 
-# function to add stars
-starify <- function(est, pval){
-  stars <- ifelse(pval < 0.01, "***",
-                  ifelse(pval < 0.05, "**",
-                         ifelse(pval < 0.1, "*", "")))
-  sprintf("%.4f$^{%s}$", est, stars)
-}
+
 
 # Dependent variables
 dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
