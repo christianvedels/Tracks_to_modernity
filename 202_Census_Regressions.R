@@ -85,10 +85,9 @@ for (nm in names(cs_aggs)) {
   print(summary(cs_aggs[[nm]]))
 }
 
-
-################################
-# === Prepare Output Table === #
-################################
+##########################################
+# === Create and Export Output Table === #
+##########################################
 
 # Extract results from Callaway and St Anna
 cs_results <- extract_res(cs_aggs, grouped = FALSE)
@@ -156,9 +155,9 @@ cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 sink()
 
-##################################################################
-# === Decompositions with controls: Group, Calendar, Dynamic === #
-##################################################################
+####################################################
+# === Decompositions: Group, Calendar, Dynamic === #
+####################################################
 
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
