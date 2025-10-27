@@ -115,7 +115,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_development_controls.tex")
+sink("Tables/railways_and_development_controls.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
@@ -208,7 +208,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_dynamic_controls", filename),
+    filename = file.path("Plots/decomposition_census_dynamic_controls", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
@@ -248,7 +248,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_calendar_controls", filename),
+    filename = file.path("Plots/decomposition_census_calendar_controls", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
@@ -293,7 +293,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_census_group_controls", filename),
+    filename = file.path("Plots/decomposition_census_group_controls", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
@@ -395,7 +395,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/tsls_railways_and_development.tex")
+sink("Tables/tsls_railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
@@ -510,7 +510,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_development.tex")
+sink("Tables/railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
