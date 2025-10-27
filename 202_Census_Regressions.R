@@ -24,7 +24,7 @@ census = census %>% rename(
   Connected_lcp = LCPAccess
 )
 
-# make dynamic plot align
+# harmonize census intervals
 census <- census %>%
   mutate(
     Year_num = ifelse(Year_num == 1901, 1900, Year_num),
