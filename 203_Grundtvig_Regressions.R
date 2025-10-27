@@ -111,7 +111,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_grundtvig_controls.tex")
+sink("Tables/railways_and_grundtvig_controls.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -202,7 +202,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_dynamic_controls", filename),
+    filename = file.path("Plots/decomposition_grundtvig_dynamic_controls", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
@@ -242,7 +242,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_calendar_controls", filename),
+    filename = file.path("Plots/decomposition_grundtvig_calendar_controls", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
@@ -309,7 +309,7 @@ for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
-    filename = file.path("../../Apps/Overleaf/Tracks to Modernity/Figures/decomposition_grundtvig_group_controls", filename),
+    filename = file.path("Plots/decomposition_grundtvig_group_controls", filename),
     plot = plots[[i]],
     width = dims$width*1, height = dims$height*1, dpi = 300
   )
@@ -411,7 +411,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/tsls_railways_and_grundtvig.tex")
+sink("Tables/tsls_railways_and_grundtvig.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -525,7 +525,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_grundtvig.tex")
+sink("Tables/railways_and_grundtvig.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
