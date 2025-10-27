@@ -1,11 +1,10 @@
 # Regressions
 #
-# Date updated:   2025-09-16
+# Date updated:   2025-10-27
 # Author:         Tom Görges
 # Purpose:        Runs Grundtvig regressions
 
 rm(list = ls())
-
 
 # ==== Libraries ====
 library(tidyverse)
@@ -31,7 +30,6 @@ common_ids <- intersect(census$GIS_ID, grundtvig$GIS_ID)
 census <- census %>% filter(GIS_ID %in% common_ids)
 grundtvig <- grundtvig %>% filter(GIS_ID %in% common_ids) 
 
-
 # Zeros are NAs in MA
 grundtvig = grundtvig %>% mutate(
   MA_assembly = case_when(
@@ -47,134 +45,18 @@ grundtvig = grundtvig %>% mutate(
 # Dependent variables
 dep_vars <- c("Assembly_house", "HighSchool", "MA_assembly", "MA_folkhigh")
 
-#########################################
-# === TWFE Regressions, No controls === #
-#########################################
-
-twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
-  data = grundtvig, cluster = ~ GIS_ID
-))
-
-# Have a look at results
-etable(twfe_models, fitstat = ~ n + my)
-
-###########################################################
-# === Callaway and Sant’Anna Regressions, no controls === #
-###########################################################
-
-# Estimate all models
-cs_models <- lapply(dep_vars, \(y) att_gt(
-  yname   = y,    
-  tname   = "Year_num",        
-  idname  = "GIS_ID_num",     
-  gname   = "Treat_year",      
-  xformla = ~1, 
-  data    = grundtvig,        
-  clustervars   = "GIS_ID",
-  control_group = "nevertreated"
-))
-
-# Aggregate into overall ATTs
-cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
-
-# Name the lists for easy reference
-names(cs_models) <- dep_vars
-names(cs_aggs)   <- dep_vars
-
-
-# Print all summaries one by one
-for (nm in names(cs_aggs)) {
-  cat("\n=== ", nm, " ===\n")
-  print(summary(cs_aggs[[nm]]))
-}
-
-################################
-# === Prepare Output Table === #
-################################
-
-# Extract results from Callaway and St Anna
-cs_results <- extract_res(cs_aggs, grouped = FALSE)
-
-# Prepare TWFE results
-twfe_tidy   <- lapply(twfe_models, tidy)
-twfe_glance <- lapply(twfe_models, glance)
-
-# store mean of outcome TWFE
-my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
-
-# create output table
-table_vals <- data.frame(
-  outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
-                "Density Folk High Schools (MA)"),
-  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
-                     sapply(twfe_tidy, \(x) x$p.value[1])),
-  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
-  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
-  cs_se     = sprintf("(%.4f)", cs_results$SE),
-  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
-  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
-  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
-  obs_cs    = cs_results$n
-)
-
-# create and store latex table
-sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_grundtvig.tex")
-
-cat("\\resizebox{\\textwidth}{!}{%\n")
-cat("\\begin{tabular}{lcccc}\n")
-cat("  \\toprule\n")
-cat("  Outcome: & Assembly house & Folk high school & \\makecell{Density Assembly \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
-cat("           & (1) & (2) & (3) & (4)  \\\\\n")
-cat("  \\midrule\n")
-cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
-cat("  Connected railway & ",
-    paste(table_vals$twfe_coef, collapse=" & "),
-    " \\\\\n")
-cat("                    & ",
-    paste(table_vals$twfe_se, collapse=" & "),
-    " \\\\\n")
-cat("  \\cmidrule(lr){2-5}\n")
-cat("  Observations      & ",
-    paste(table_vals$obs_twfe, collapse=" & "),
-    " \\\\\n")
-cat("  Mean of outcome   & ",
-    paste(table_vals$my_twfe, collapse=" & "),
-    " \\\\\n")   # <-- TWFE means here
-cat("  \\midrule\n")
-cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
-cat("  Connected railway & ",
-    paste(table_vals$cs_coef, collapse=" & "),
-    " \\\\\n")
-cat("                    & ",
-    paste(table_vals$cs_se, collapse=" & "),
-    " \\\\\n")
-cat("  \\cmidrule(lr){2-5}\n")
-cat("  Observations      & ",
-    paste(table_vals$obs_cs, collapse=" & "),
-    " \\\\\n")
-cat("  Mean of outcome   & ",
-    paste(table_vals$my_cs, collapse=" & "),
-    " \\\\\n")   # <-- CS means here
-cat("  \\bottomrule\n")
-cat("\\end{tabular}\n")
-cat("}\n")  # closes \resizebox
-sink()
-
-
 ###########################################
 # === TWFE Regressions, With controls === #
 ###########################################
-
 twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year + Dist_ox_year | GIS_ID + Year")),
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year + 
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
   data = grundtvig, cluster = ~ GIS_ID
 ))
-
-# Have a look
-#etable(twfe_models, 
-#       fitstat = ~ n + my, 
-#       keep = "Connected_railway")
 
 #############################################################
 # === Callaway and Sant’Anna Regressions, With controls === #
@@ -198,13 +80,6 @@ cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple", na.rm = TRUE))
 # Name the lists for easy reference
 names(cs_models) <- dep_vars
 names(cs_aggs)   <- dep_vars
-
-
-# Print all summaries one by one
-#for (nm in names(cs_aggs)) {
-#  cat("\n=== ", nm, " ===\n")
-#  print(summary(cs_aggs[[nm]]))
-#}
 
 ################################
 # === Prepare Output Table === #
@@ -290,7 +165,6 @@ cs_decomp <- lapply(cs_models, function(m) {
     dynamic  = aggte(m, type = "dynamic", na.rm = T)
   )
 })
-
 
 # Name lists
 names(cs_decomp) <- dep_vars
@@ -441,8 +315,6 @@ for (i in seq_along(plots)) {
   )
 }
 
-
-
 ##########################################
 # === TWFE Regressions, Instrumented === #
 ##########################################
@@ -479,11 +351,9 @@ etable(
   #replace = T
 )
 
-
 ###########################################################################
 # === Callaway and Sant’Anna Regressions, Instrumented (reduced form) === #
 ###########################################################################
-
 
 # Estimate all models
 cs_models <- lapply(dep_vars, \(y) att_gt(
@@ -583,5 +453,118 @@ cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
 sink()
 
+#########################################
+# === TWFE Regressions, no controls === #
+#########################################
+
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
+  data = grundtvig, cluster = ~ GIS_ID
+))
+
+# Have a look at results
+etable(twfe_models, fitstat = ~ n + my)
+
+###########################################################
+# === Callaway and Sant’Anna Regressions, no controls === #
+###########################################################
+
+# Estimate all models
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year",      
+  xformla = ~1, 
+  data    = grundtvig,        
+  clustervars   = "GIS_ID",
+  control_group = "nevertreated"
+))
+
+# Aggregate into overall ATTs
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+
+# Name the lists for easy reference
+names(cs_models) <- dep_vars
+names(cs_aggs)   <- dep_vars
+
+
+# Print all summaries one by one
+for (nm in names(cs_aggs)) {
+  cat("\n=== ", nm, " ===\n")
+  print(summary(cs_aggs[[nm]]))
+}
+
+################################
+# === Prepare Output Table === #
+################################
+
+# Extract results from Callaway and St Anna
+cs_results <- extract_res(cs_aggs, grouped = FALSE)
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
+                "Density Folk High Schools (MA)"),
+  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
+                     sapply(twfe_tidy, \(x) x$p.value[1])),
+  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
+  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
+  cs_se     = sprintf("(%.4f)", cs_results$SE),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
+  obs_cs    = cs_results$n
+)
+
+# create and store latex table
+sink("../../Apps/Overleaf/Tracks to Modernity/Tables/railways_and_grundtvig.tex")
+
+cat("\\resizebox{\\textwidth}{!}{%\n")
+cat("\\begin{tabular}{lcccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & Assembly house & Folk high school & \\makecell{Density Assembly \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
+cat("           & (1) & (2) & (3) & (4)  \\\\\n")
+cat("  \\midrule\n")
+cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$twfe_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$twfe_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-5}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse=" & "),
+    " \\\\\n")   # <-- TWFE means here
+cat("  \\midrule\n")
+cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$cs_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(table_vals$cs_se, collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-5}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_cs, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_cs, collapse=" & "),
+    " \\\\\n")   # <-- CS means here
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+cat("}\n")  # closes \resizebox
+sink()
 
 
