@@ -18,7 +18,7 @@ source("Data_cleaning_scripts/000_Functions.R")
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
 
-# === Data preparation ===
+# === Prepare data ===
 census = census %>% rename(
   Connected_railway = RailAccess,
   Connected_lcp = LCPAccess
@@ -299,8 +299,6 @@ for (i in seq_along(plots)) {
     width = dims$width, height = dims$height, dpi = 300
   )
 }
-
-
 
 ##########################################
 # === TWFE Regressions, Instrumented === #
