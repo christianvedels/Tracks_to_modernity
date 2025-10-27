@@ -36,12 +36,16 @@ dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
               "lnNotAgriculture", "HISCAM_avg", "lnMigration")
 
 
-###########################################
-# === TWFE Regressions, With controls === #
-###########################################
-
+############################
+# === TWFE Regressions === #
+############################
 twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway + Dist_hamb_year + Dist_cph_year + Pop1801_year + county_by_year + Dist_ox_year | GIS_ID + Year")),
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year +
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
   data = census, cluster = ~ GIS_ID
 ))
 
@@ -51,9 +55,9 @@ etable(twfe_models,
        keep = "Connected_railway")
 
 
-#############################################################
-# === Callaway and Sant’Anna Regressions, With controls === #
-#############################################################
+##############################################
+# === Callaway and Sant’Anna Regressions === #
+##############################################
 
 # Estimate models
 cs_models <- lapply(dep_vars, \(y) att_gt(
@@ -437,7 +441,7 @@ sink()
 
 
 #########################################
-# === TWFE Regressions, No controls === #
+# === TWFE Regressions, no controls === #
 #########################################
 
 twfe_models <- lapply(dep_vars, \(y) feols(
