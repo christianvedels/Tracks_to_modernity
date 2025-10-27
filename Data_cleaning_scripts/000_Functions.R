@@ -546,6 +546,13 @@ time_passed = function(time0, category = ""){
   return(time1)
 }
 
+# === function to add stars === #
+starify <- function(est, pval){
+  stars <- ifelse(pval < 0.01, "***",
+                  ifelse(pval < 0.05, "**",
+                         ifelse(pval < 0.1, "*", "")))
+  sprintf("%.4f$^{%s}$", est, stars)
+}
 
 # ==== Custom aggregation ====
 custom_aggregate = function(x, groups = list(1840:1860, 1861:1880, 1881:1900, 1901:1920)){
