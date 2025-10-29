@@ -1,7 +1,7 @@
 # Correlational evidence: Tracks, cooperatives, and assembly houses
 #
-# Date updated:   2025-02-05
-# Auhtor:         Christian Vedel
+# Date updated:   2025-10-29
+# Auhtor:         Christian Vedel, Tom Görges
 # Purpose:        Produces descriptive statistics, which shows how cooperative
 #                 creameries, assembly houses, and railway tracks are correlated
 
@@ -10,72 +10,7 @@ library(tidyverse)
 library(fixest)
 library(sf)
 
-# helper function: insert midrules, remove significance note, and keep only tabular
-output_helper <- function(tex){
-  # === Insert midrules ===
-  i_const <- grep("^\\s*Constant", tex)[1]
-  if(!is.na(i_const) && i_const > 1) {
-    tex <- append(tex, "   \\midrule", after = i_const - 1)
-  }
-  
-  i_obs <- grep("^\\s*Observations", tex)[1]
-  if(!is.na(i_obs) && i_obs > 1) {
-    tex <- append(tex, "   \\midrule", after = i_obs - 1)
-  }
-  
-  # === Remove "Signif. Codes" line ===
-  signif_line <- grep("Signif\\. Codes", tex)
-  if(length(signif_line) > 0) {
-    tex <- tex[-signif_line]
-  }
-  
-  # === Keep only \begin{tabular} ... \end{tabular} ===
-  start <- grep("\\\\begin\\{tabular\\}", tex)[1]
-  end   <- grep("\\\\end\\{tabular\\}", tex)[1]
-  if(!is.na(start) && !is.na(end)) {
-    tex <- tex[start:end]
-  }
-  
-  tex
-}
-
-output_helper <- function(tex){
-  # === Insert midrules ===
-  i_const <- grep("^\\s*Constant", tex)[1]
-  if(!is.na(i_const) && i_const > 1) {
-    tex <- append(tex, "   \\midrule", after = i_const - 1)
-  }
-  
-  i_obs <- grep("^\\s*Observations", tex)[1]
-  if(!is.na(i_obs) && i_obs > 1) {
-    tex <- append(tex, "   \\midrule", after = i_obs - 1)
-  }
-  
-  # === Remove "Signif. Codes" line ===
-  signif_line <- grep("Signif\\. Codes", tex)
-  if(length(signif_line) > 0) {
-    tex <- tex[-signif_line]
-  }
-  
-  # === Add two midrules before \end{tabular} ===
-  i_end <- grep("\\\\end\\{tabular\\}", tex)[1]
-  if(!is.na(i_end) && i_end > 1) {
-    tex <- append(tex, c("   \\midrule", "   \\midrule"), after = i_end - 1)
-  }
-  
-  # === Keep only \begin{tabular} ... \end{tabular} ===
-  start <- grep("\\\\begin\\{tabular\\}", tex)[1]
-  end   <- grep("\\\\end\\{tabular\\}", tex)[1]
-  if(!is.na(start) && !is.na(end)) {
-    tex <- tex[start:end]
-  }
-  
-  tex
-}
-
-
-
-
+source(file = "Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
 assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv")
@@ -169,8 +104,9 @@ mod2 = feols(
     cluster = ~GIS_ID
 )
 
-# 1: Without interaction
-
+##################################
+# === 1: Without interaction === #
+##################################
 
 # Coops
 # Parish level
