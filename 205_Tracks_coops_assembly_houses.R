@@ -211,12 +211,6 @@ etable(
 )
 
 
-
-
-
-
-
-
 ###############################
 # === 2: With interaction === #
 ###############################
@@ -231,16 +225,33 @@ mod3 = feols(
 
 # Hundred level
 mod4 = fepois(
-    Coop ~ Connected_rail * Assembly_house, data = cross_section_herred
+    Coops ~ Connected_rail * Assembly_house, data = cross_section_herred
 )
 
+# Output table
 etable(
-    list(mod1, mod2, mod3, mod4),
-    tex = TRUE
-)
-
-etable(
-    list(mod1, mod2, mod3, mod4)
+  list(mod1, mod2, mod3, mod4),
+  tex = TRUE,
+  fitstat = ~ n,
+  dict = c(
+    Connected_rail = "Railway",
+    Assembly_house = "Assembly house"
+  ),
+  headers = list(
+    "^:_:Outcome:" = list(
+      "At least one cooperative creamery" = 3,
+      "Count of coops" = 1
+    )
+  ),
+  style.tex = style.tex(
+    var.title = "",
+    fixef.title = "",
+    stats.title = ""
+  ),
+  depvar = FALSE,
+  postprocess.tex = output_helper,
+  file = "Tables/coop_assembly_houses_and_railways_interaction.tex",
+  replace = T
 )
 
 
