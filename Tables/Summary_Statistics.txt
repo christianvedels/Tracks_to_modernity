@@ -16,7 +16,6 @@ Variable & N & Mean & SD & Min & Max\\
 \hspace{1em}HISCAM avg & 6355 & 48.63000 & 1.5030 & 44.240000 & 82.850\\
 \hspace{1em}Migration & 6356 & 263.20000 & 390.6000 & 0.000000 & 4299.000\\
 \hspace{1em}Connected railway & 6356 & 0.17610 & 0.3809 & 0.000000 & 1.000\\
-\hspace{1em}Connected LCP & 6356 & 0.15010 & 0.3572 & 0.000000 & 1.000\\
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{B. Grundtvig}}\\
 \hspace{1em}Assembly house & 119200 & 0.17150 & 0.3769 & 0.000000 & 1.000\\
@@ -24,7 +23,6 @@ Variable & N & Mean & SD & Min & Max\\
 \hspace{1em}Density Assembly houses (MA) & 119200 & 4.46400 & 5.4040 & 0.000000 & 20.350\\
 \hspace{1em}Density Folk high schools (MA) & 119200 & 0.70240 & 0.4257 & 0.005426 & 3.784\\
 \hspace{1em}Connected railway & 119200 & 0.25770 & 0.4374 & 0.000000 & 1.000\\
-\hspace{1em}Connected LCP & 119200 & 0.11490 & 0.3189 & 0.000000 & 1.000\\
 \bottomrule
 \end{tabular}}
 \end{table}

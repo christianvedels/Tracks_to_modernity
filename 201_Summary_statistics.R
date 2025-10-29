@@ -1,6 +1,6 @@
 # Descriptive statistics only
 #
-# Date updated:   2025-02-13
+# Date updated:   2025-10-29
 # Author:         Christian Vedel, Tom Görges
 # Purpose:        Summary stats + distributions
 
@@ -103,7 +103,7 @@ summary_tables = function() {
     census,
     vars = c("Population", "lnManufacturing", "lnNotAgriculture",
              "Child_women_ratio", "HISCAM_avg", "Migration",
-             "Connected_railway", "Connected_lcp"),
+             "Connected_railway"),
     labeller = outcomeNames
   )
   
@@ -111,7 +111,7 @@ summary_tables = function() {
   sum_table_grundtvig = make_summary(
     grundtvig,
     vars = c("Assembly_house", "HighSchool", "MA_assembly", "MA_folkhigh",
-             "Connected_railway", "Connected_lcp"),
+             "Connected_railway"),
     labeller = outcomeNames_grundtvig
   )
   
