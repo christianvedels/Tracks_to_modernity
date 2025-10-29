@@ -1,7 +1,7 @@
 # Correlational evidence: Tracks, cooperatives, and assembly houses
 #
-# Date updated:   2025-02-05
-# Auhtor:         Christian Vedel
+# Date updated:   2025-10-29
+# Auhtor:         Christian Vedel, Tom Görges
 # Purpose:        Produces descriptive statistics, which shows how cooperative
 #                 creameries, assembly houses, and railway tracks are correlated
 
@@ -9,6 +9,8 @@
 library(tidyverse)
 library(fixest)
 library(sf)
+
+source(file = "Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
 assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv")
@@ -60,13 +62,13 @@ cross_section_herred = cross_section %>%
     summarise(
         Assembly_house = sum(Assembly_house_count),
         Connected_rail = sum(Connected_rail),
-        Coop = sum(Coop_count)
+        Coops = sum(Coop_count)
     )
 
 
 # ==== Descriptive statistics ====
 p1 = cross_section_herred %>%
-    ggplot(aes(Assembly_house, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(Assembly_house, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() +
   labs(
     x = "Assembly Houses",
@@ -76,7 +78,7 @@ p1 = cross_section_herred %>%
 p1
 
 p2 = cross_section_herred %>%
-    ggplot(aes(Connected_rail, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(Connected_rail, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() +
   labs(
     x = "Connected Parishes",
@@ -89,6 +91,8 @@ ggsave("Plots/Assembly_houses_vs_coops.png", p1, width = 4, height = 3)
 ggsave("Plots/Connected_rail_vs_coops.png", p2, width = 4, height = 3)
 
 # ==== In regression form ====
+
+
 # Assembly houses
 mod1 = feols(
     Coop ~ Connected_rail, data = cross_section,
@@ -100,6 +104,54 @@ mod2 = feols(
     cluster = ~GIS_ID
 )
 
+##################################
+# === 1: Without interaction === #
+##################################
+
+# Coops
+# Parish level
+mod3 = feols(
+  Coop ~ Connected_rail + Assembly_house, data = cross_section,
+  cluster = ~GIS_ID
+)
+
+# Hundred level
+mod4 = fepois(
+  Coops ~ Connected_rail + Assembly_house, data = cross_section_herred
+)
+
+# Output table
+etable(
+  list(mod1, mod2, mod3, mod4),
+  tex = TRUE,
+  fitstat = ~ n,
+  dict = c(
+    Connected_rail = "Railway",
+    Assembly_house = "Assembly house"
+  ),
+  headers = list(
+    "^:_:Outcome:" = list(
+      "At least one cooperative creamery" = 3,
+      "Count of coops" = 1
+    )
+  ),
+  style.tex = style.tex(
+    var.title = "",
+    fixef.title = "",
+    stats.title = ""
+  ),
+  depvar = FALSE,
+  postprocess.tex = output_helper,
+  file = "Tables/coop_assembly_houses_and_railways.tex",
+  replace = T
+)
+
+
+###############################
+# === 2: With interaction === #
+###############################
+
+
 # Coops
 # Parish level
 mod3 = feols(
@@ -109,16 +161,33 @@ mod3 = feols(
 
 # Hundred level
 mod4 = fepois(
-    Coop ~ Connected_rail * Assembly_house, data = cross_section_herred
+    Coops ~ Connected_rail * Assembly_house, data = cross_section_herred
 )
 
+# Output table
 etable(
-    list(mod1, mod2, mod3, mod4),
-    tex = TRUE
-)
-
-etable(
-    list(mod1, mod2, mod3, mod4)
+  list(mod1, mod2, mod3, mod4),
+  tex = TRUE,
+  fitstat = ~ n,
+  dict = c(
+    Connected_rail = "Railway",
+    Assembly_house = "Assembly house"
+  ),
+  headers = list(
+    "^:_:Outcome:" = list(
+      "At least one cooperative creamery" = 3,
+      "Count of coops" = 1
+    )
+  ),
+  style.tex = style.tex(
+    var.title = "",
+    fixef.title = "",
+    stats.title = ""
+  ),
+  depvar = FALSE,
+  postprocess.tex = output_helper,
+  file = "Tables/coop_assembly_houses_and_railways_interaction.tex",
+  replace = T
 )
 
 

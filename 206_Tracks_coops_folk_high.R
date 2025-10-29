@@ -1,7 +1,7 @@
 # Correlational evidence: Tracks, cooperatives, and assembly houses
 #
-# Date updated:   2025-02-05
-# Auhtor:         Christian Vedel
+# Date updated:   2025-10-29
+# Author:         Christian Vedel, Tom Görges
 # Purpose:        Produces descriptive statistics, which shows how cooperative
 #                 creameries, assembly houses, and railway tracks are correlated
 
@@ -9,6 +9,8 @@
 library(tidyverse)
 library(fixest)
 library(sf)
+
+source(file = "Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
 folk_high = read_csv2("Data/Panel_of_folk_high_schools.csv")
@@ -60,13 +62,13 @@ cross_section_herred = cross_section %>%
     summarise(
         HighSchool = sum(Folk_high_count),
         Connected_rail = sum(Connected_rail),
-        Coop = sum(Coop_count)
+        Coops = sum(Coop_count)
     )
 
 
 # ==== Descriptive statistics ====
 p1 = cross_section_herred %>%
-    ggplot(aes(HighSchool, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(HighSchool, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() + 
   labs(
     x = "Folk High Schools",
@@ -76,7 +78,7 @@ p1 = cross_section_herred %>%
 p1
 
 p2 = cross_section_herred %>%
-    ggplot(aes(Connected_rail, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(Connected_rail, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() +
   labs(
     x = "Connected Parishes",
@@ -103,22 +105,39 @@ mod2 = feols(
 # Coops
 # Parish level
 mod3 = feols(
-    Coop ~ Connected_rail * HighSchool, data = cross_section,
+    Coop ~ Connected_rail + HighSchool, data = cross_section,
     cluster = ~GIS_ID
 )
 
 # Hundred level
 mod4 = fepois(
-    Coop ~ Connected_rail * HighSchool, data = cross_section_herred
+    Coops ~ Connected_rail + HighSchool, data = cross_section_herred
 )
 
+# Output table
 etable(
-    list(mod1, mod2, mod3, mod4),
-    tex = TRUE
-)
-
-etable(
-    list(mod1, mod2, mod3, mod4)
+  list(mod1, mod2, mod3, mod4),
+  tex = TRUE,
+  fitstat = ~ n,
+  dict = c(
+    Connected_rail = "Railway",
+    HighSchool = "Folk High School"
+  ),
+  headers = list(
+    "^:_:Outcome:" = list(
+      "At least one cooperative creamery" = 3,
+      "Count of coops" = 1
+    )
+  ),
+  style.tex = style.tex(
+    var.title = "",
+    fixef.title = "",
+    stats.title = ""
+  ),
+  depvar = FALSE,
+  postprocess.tex = output_helper,
+  file = "Tables/coop_folk_high_and_railways.tex",
+  replace = T
 )
 
 
