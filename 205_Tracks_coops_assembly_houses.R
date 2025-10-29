@@ -10,6 +10,73 @@ library(tidyverse)
 library(fixest)
 library(sf)
 
+# helper function: insert midrules, remove significance note, and keep only tabular
+output_helper <- function(tex){
+  # === Insert midrules ===
+  i_const <- grep("^\\s*Constant", tex)[1]
+  if(!is.na(i_const) && i_const > 1) {
+    tex <- append(tex, "   \\midrule", after = i_const - 1)
+  }
+  
+  i_obs <- grep("^\\s*Observations", tex)[1]
+  if(!is.na(i_obs) && i_obs > 1) {
+    tex <- append(tex, "   \\midrule", after = i_obs - 1)
+  }
+  
+  # === Remove "Signif. Codes" line ===
+  signif_line <- grep("Signif\\. Codes", tex)
+  if(length(signif_line) > 0) {
+    tex <- tex[-signif_line]
+  }
+  
+  # === Keep only \begin{tabular} ... \end{tabular} ===
+  start <- grep("\\\\begin\\{tabular\\}", tex)[1]
+  end   <- grep("\\\\end\\{tabular\\}", tex)[1]
+  if(!is.na(start) && !is.na(end)) {
+    tex <- tex[start:end]
+  }
+  
+  tex
+}
+
+output_helper <- function(tex){
+  # === Insert midrules ===
+  i_const <- grep("^\\s*Constant", tex)[1]
+  if(!is.na(i_const) && i_const > 1) {
+    tex <- append(tex, "   \\midrule", after = i_const - 1)
+  }
+  
+  i_obs <- grep("^\\s*Observations", tex)[1]
+  if(!is.na(i_obs) && i_obs > 1) {
+    tex <- append(tex, "   \\midrule", after = i_obs - 1)
+  }
+  
+  # === Remove "Signif. Codes" line ===
+  signif_line <- grep("Signif\\. Codes", tex)
+  if(length(signif_line) > 0) {
+    tex <- tex[-signif_line]
+  }
+  
+  # === Add two midrules before \end{tabular} ===
+  i_end <- grep("\\\\end\\{tabular\\}", tex)[1]
+  if(!is.na(i_end) && i_end > 1) {
+    tex <- append(tex, c("   \\midrule", "   \\midrule"), after = i_end - 1)
+  }
+  
+  # === Keep only \begin{tabular} ... \end{tabular} ===
+  start <- grep("\\\\begin\\{tabular\\}", tex)[1]
+  end   <- grep("\\\\end\\{tabular\\}", tex)[1]
+  if(!is.na(start) && !is.na(end)) {
+    tex <- tex[start:end]
+  }
+  
+  tex
+}
+
+
+
+
+
 # ==== Load data ====
 assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv")
 coops = read_csv("Data/creameries_parish.csv")
@@ -60,13 +127,13 @@ cross_section_herred = cross_section %>%
     summarise(
         Assembly_house = sum(Assembly_house_count),
         Connected_rail = sum(Connected_rail),
-        Coop = sum(Coop_count)
+        Coops = sum(Coop_count)
     )
 
 
 # ==== Descriptive statistics ====
 p1 = cross_section_herred %>%
-    ggplot(aes(Assembly_house, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(Assembly_house, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() +
   labs(
     x = "Assembly Houses",
@@ -76,7 +143,7 @@ p1 = cross_section_herred %>%
 p1
 
 p2 = cross_section_herred %>%
-    ggplot(aes(Connected_rail, Coop)) + geom_point() + geom_smooth(method = "lm") + 
+    ggplot(aes(Connected_rail, Coops)) + geom_point() + geom_smooth(method = "lm") + 
     theme_bw() +
   labs(
     x = "Connected Parishes",
@@ -89,6 +156,8 @@ ggsave("Plots/Assembly_houses_vs_coops.png", p1, width = 4, height = 3)
 ggsave("Plots/Connected_rail_vs_coops.png", p2, width = 4, height = 3)
 
 # ==== In regression form ====
+
+
 # Assembly houses
 mod1 = feols(
     Coop ~ Connected_rail, data = cross_section,
@@ -99,6 +168,59 @@ mod2 = feols(
     Coop ~ Assembly_house, data = cross_section,
     cluster = ~GIS_ID
 )
+
+# 1: Without interaction
+
+
+# Coops
+# Parish level
+mod3 = feols(
+  Coop ~ Connected_rail + Assembly_house, data = cross_section,
+  cluster = ~GIS_ID
+)
+
+# Hundred level
+mod4 = fepois(
+  Coops ~ Connected_rail + Assembly_house, data = cross_section_herred
+)
+
+# Output table
+etable(
+  list(mod1, mod2, mod3, mod4),
+  tex = TRUE,
+  fitstat = ~ n,
+  dict = c(
+    Connected_rail = "Railway",
+    Assembly_house = "Assembly house"
+  ),
+  headers = list(
+    "^:_:Outcome:" = list(
+      "At least one cooperative creamery" = 3,
+      "Count of coops" = 1
+    )
+  ),
+  style.tex = style.tex(
+    var.title = "",
+    fixef.title = "",
+    stats.title = ""
+  ),
+  depvar = FALSE,
+  postprocess.tex = output_helper,
+  file = "Tables/coop_assembly_houses_and_railways.tex",
+  replace = T
+)
+
+
+
+
+
+
+
+
+###############################
+# === 2: With interaction === #
+###############################
+
 
 # Coops
 # Parish level
