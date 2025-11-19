@@ -9,20 +9,20 @@ Variable & N & Mean & SD & Min & Max\\
 \midrule
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{A. Census}}\\
-\hspace{1em}Population & 6356 & 793.80000 & 590.5000 & 37.000000 & 13090.000\\
-\hspace{1em}log(Manufacturing + 1) & 6356 & 4.16400 & 0.8498 & 0.000000 & 7.941\\
-\hspace{1em}log(Not agriculture + 1) & 6356 & 4.47100 & 0.8548 & 0.000000 & 8.148\\
-\hspace{1em}Child-women ratio & 6336 & 0.48830 & 0.1115 & 0.000000 & 1.364\\
-\hspace{1em}HISCAM avg & 6355 & 48.63000 & 1.5030 & 44.240000 & 82.850\\
-\hspace{1em}Migration & 6356 & 263.20000 & 390.6000 & 0.000000 & 4299.000\\
-\hspace{1em}Connected railway & 6356 & 0.17610 & 0.3809 & 0.000000 & 1.000\\
+\hspace{1em}Population & 6356 & 793.777 & 590.528 & 37.000 & 13087.000\\
+\hspace{1em}Manufacturing & 6346 & 0.256 & 0.080 & 0.000 & 0.718\\
+\hspace{1em}Not agriculture & 6346 & 0.350 & 0.112 & 0.000 & 0.888\\
+\hspace{1em}Child-women ratio & 6336 & 0.488 & 0.111 & 0.000 & 1.364\\
+\hspace{1em}HISCAM avg & 6355 & 48.631 & 1.503 & 44.235 & 82.850\\
+\hspace{1em}Migration & 6356 & 263.233 & 390.587 & 0.000 & 4299.000\\
+\hspace{1em}Connected railway & 6356 & 0.176 & 0.381 & 0.000 & 1.000\\
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{B. Grundtvig}}\\
-\hspace{1em}Assembly house & 119200 & 0.17150 & 0.3769 & 0.000000 & 1.000\\
-\hspace{1em}Folk high school & 119200 & 0.02945 & 0.1691 & 0.000000 & 1.000\\
-\hspace{1em}Density Assembly houses (MA) & 119200 & 4.46400 & 5.4040 & 0.000000 & 20.350\\
-\hspace{1em}Density Folk high schools (MA) & 119200 & 0.70240 & 0.4257 & 0.005426 & 3.784\\
-\hspace{1em}Connected railway & 119200 & 0.25770 & 0.4374 & 0.000000 & 1.000\\
+\hspace{1em}Assembly house & 119175 & 0.171 & 0.377 & 0.000 & 1.000\\
+\hspace{1em}Folk high school & 119175 & 0.029 & 0.169 & 0.000 & 1.000\\
+\hspace{1em}Density Assembly houses (MA) & 119175 & 4.464 & 5.404 & 0.000 & 20.353\\
+\hspace{1em}Density Folk high schools (MA) & 119175 & 0.702 & 0.426 & 0.005 & 3.784\\
+\hspace{1em}Connected railway & 119175 & 0.258 & 0.437 & 0.000 & 1.000\\
 \bottomrule
 \end{tabular}}
 \end{table}
