@@ -9,8 +9,6 @@ library(tidyverse)
 library(kableExtra) # for latex tables
 source("Data_cleaning_scripts/000_Functions.R")
 
-# ==== Params ====
-NSIGNIF = 4 # Significant digits in all tables
 
 # ==== Load data ====
 census = read_csv2("Data/REGRESSION_DATA_Demography.csv", guess_max = 100000)
@@ -94,7 +92,7 @@ summary_tables = function() {
         names_pattern = "^(.*)_(n|mean|sd|min|max)$"
       ) %>%
       mutate(var = labeller(var)) %>%
-      mutate(across(where(is.numeric), \(x) signif0(x, digits = NSIGNIF)))
+      mutate(across(where(is.numeric), ~ round(.x, 3)))
   }
   
   # Census table
