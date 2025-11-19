@@ -101,7 +101,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
                 "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
@@ -119,7 +119,7 @@ sink("Tables/railways_and_development_controls.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
@@ -347,7 +347,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
                 "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
@@ -361,7 +361,7 @@ sink("Tables/tsls_railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  Connected railway & ",
@@ -442,7 +442,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
                 "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
@@ -460,7 +460,7 @@ sink("Tables/railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
