@@ -42,10 +42,9 @@ outcomeNames = function(x){
   case_when(
     x == "lnPopulation" ~ "log(Population)",
     x == "lnpop1801" ~ "log(Population 1801)",	
-    x == "lnChild_women_ratio" ~ "log(Child-women ratio + 1)",
     x == "Child_women_ratio" ~ "Child-women ratio",
-    x == "lnManufacturing" ~ "log(Manufacturing + 1)",
-    x == "lnNotAgriculture" ~ "log(Not agriculture + 1)",
+    x == "industry_share" ~ "Manufacturing",
+    x == "non_agricultural_share" ~ "Not agriculture",
     x == "HISCAM_avg" ~ "HISCAM avg",
     x == "lnMigration" ~ "log(Migration)",
     x == "Connected_railway" ~ "Connected railway",
@@ -101,8 +100,8 @@ summary_tables = function() {
   # Census table
   sum_table_census = make_summary(
     census,
-    vars = c("Population", "lnManufacturing", "lnNotAgriculture",
-             "Child_women_ratio", "HISCAM_avg", "Migration",
+    vars = c("lnPopulation", "industry_share", "non_agricultural_share",
+             "Child_women_ratio", "HISCAM_avg", "lnMigration",
              "Connected_railway"),
     labeller = outcomeNames
   )
@@ -157,12 +156,12 @@ census_distributions = function(){
   p1 = tmp %>%
     filter(Connected_railway == 0) %>%
     mutate(lnpop1801 = log(Pop1801)) %>%
-    select(Ever_rail, lnPopulation, lnChild_women_ratio, lnManufacturing, 
-           lnNotAgriculture, HISCAM_avg, lnMigration, dist_hmb, dist_cph, 
+    select(Ever_rail, lnPopulation, Child_women_ratio, industry_share, 
+           non_agricultural_share, HISCAM_avg, lnMigration, dist_hmb, dist_cph, 
            DistOxRoad, lnpop1801) %>%
     pivot_longer(
-      cols = c(lnPopulation, lnChild_women_ratio, lnManufacturing, 
-               lnNotAgriculture, HISCAM_avg, lnMigration, dist_hmb, 
+      cols = c(lnPopulation, Child_women_ratio, industry_share, 
+               non_agricultural_share, HISCAM_avg, lnMigration, dist_hmb, 
                dist_cph, DistOxRoad, lnpop1801),
       names_to = "var"
     ) %>%
@@ -200,12 +199,12 @@ census_distributions_by_year = function(){
   colors <- c("Never" = "black", setNames(palette_years, years))
   
   p1 = tmp %>%
-    select(Treat_year, lnPopulation, lnChild_women_ratio, lnManufacturing, 
-           lnNotAgriculture, HISCAM_avg, lnMigration, dist_hmb, dist_cph, 
+    select(Treat_year, lnPopulation, Child_women_ratio, industry_share,
+           non_agricultural_share, HISCAM_avg, lnMigration, dist_hmb, dist_cph, 
            DistOxRoad, lnpop1801) %>%
     pivot_longer(
-      cols = c(lnPopulation, lnChild_women_ratio, lnManufacturing, 
-               lnNotAgriculture, HISCAM_avg, lnMigration, dist_hmb, 
+      cols = c(lnPopulation, Child_women_ratio, industry_share, 
+               non_agricultural_share, HISCAM_avg, lnMigration, dist_hmb, 
                dist_cph, DistOxRoad, lnpop1801),
       names_to = "var"
     ) %>%
