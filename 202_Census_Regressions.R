@@ -32,8 +32,8 @@ census <- census %>%
   )
 
 # Define dependent variables
-dep_vars <- c("lnPopulation", "lnChild_women_ratio", "lnManufacturing",
-              "lnNotAgriculture", "HISCAM_avg", "lnMigration")
+dep_vars <- c("lnPopulation", "lnChild_women_ratio", "industry_share",
+              "non_agricultural_share", "HISCAM_avg", "lnMigration")
 
 
 ############################
@@ -101,8 +101,8 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","log(Manufacturing+1)",
-                "log(Not Agriculture+1)","HISCAM avg","log(Migration)"),
+  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
   twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
@@ -119,7 +119,7 @@ sink("Tables/railways_and_development_controls.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & log(Manufacturing+1) & log(Not Agriculture+1) & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
@@ -347,8 +347,8 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","log(Manufacturing+1)",
-                "log(Not Agriculture+1)","HISCAM avg","log(Migration)"),
+  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
   twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
@@ -361,7 +361,7 @@ sink("Tables/tsls_railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & log(Manufacturing+1) & log(Not Agriculture+1) & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  Connected railway & ",
@@ -442,8 +442,8 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("log(Pop.)","log(Child women ratio)","log(Manufacturing+1)",
-                "log(Not Agriculture+1)","HISCAM avg","log(Migration)"),
+  outcome   = c("log(Pop.)","log(Child women ratio)","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
   twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
@@ -460,7 +460,7 @@ sink("Tables/railways_and_development.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & log(Pop.) & log(Child women ratio) & log(Manufacturing+1) & log(Not Agriculture+1) & HISCAM avg & log(Migration) \\\\\n")
+cat("  Outcome: & log(Pop.) & log(Child women ratio) & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
