@@ -139,7 +139,7 @@ census = census %>%
     lnFarming          = log(Farming + 1),
     lnChild_women_ratio = log(Child_women_ratio + 1),
     lnHISCAM_avg       = log(HISCAM_avg),
-    lnMigration        = log(Migration),
+    lnMigration         = if_else(is.finite(log(Migration)), log(Migration), NA_real_),
     
     # Convert Year and GIS_ID for subsequent operations
     Year_num = as.numeric(as.character(Year)),
