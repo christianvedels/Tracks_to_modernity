@@ -24,10 +24,6 @@ census = census %>% rename(
   Connected_lcp = LCPAccess
 )
 
-# === Create migrant_share
-census <- census %>%
-  mutate(Migrant_share = Migration / Population)
-
 # harmonize census intervals
 census <- census %>%
   mutate(
