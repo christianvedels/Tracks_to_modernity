@@ -32,7 +32,7 @@ census <- census %>%
   )
 
 # Define dependent variables
-dep_vars <- c("lnPopulation", "lnChild_women_ratio", "industry_share",
+dep_vars <- c("lnPopulation", "Child_women_ratio", "industry_share",
               "non_agricultural_share", "HISCAM_avg", "lnMigration")
 
 
