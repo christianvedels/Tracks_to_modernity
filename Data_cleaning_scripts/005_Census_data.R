@@ -9,7 +9,7 @@ library(tidyverse)
 library(hisco)
 
 # ==== Load data ====
-load("../Data not redistributable/All_raw_data_for_project.Rdata")
+load("../../../Data not redistributable/All_raw_data_for_project.Rdata")
 
 hisco_incomes = read_csv("Data/HISCO_coded_income.csv")
 
@@ -122,6 +122,14 @@ hisco = hisco %>%
 # ==== Join on ses scores ====
 clean_census = clean_census %>% 
   left_join(hisco, by = c("Year", "GIS_ID"))
+
+# Add industry share, non_agricultural share
+clean_census <- clean_census %>%
+  mutate(
+    industry_share = Manufacturing_789 / Pop_m,
+    non_agricultural_share = (Pop_m - Farming) / Pop_m
+  )
+
 
 clean_census %>% 
   write_csv2("Data/Census_data.csv")  
