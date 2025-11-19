@@ -11,7 +11,7 @@ library(hisco)
 # ==== Load data ====
 load("../../../Data not redistributable/All_raw_data_for_project.Rdata")
 
-hisco_incomes = read_csv("Data/HISCO_coded_income.csv")
+hisco_incomes = read_csv("../Data/HISCO_coded_income.csv")
 
 # ==== Select variables ====
 clean_census = popdata %>% 
@@ -49,10 +49,10 @@ clean_census = popdata %>%
   )
 
 # ==== HISCO codes ====
-path = "../Data not redistributable/LL_hisco_codes_clean.csv"
+path = "../../../Data not redistributable/LL_hisco_codes_clean.csv"
 hisco_full = read_csv2(path)
 
-key_gis_id_row_id = read_csv("../Data not redistributable/RowID_GIS_ID_key.csv")
+key_gis_id_row_id = read_csv("../../../Data not redistributable/RowID_GIS_ID_key.csv")
 
 # Convert to ses
 hisco = hisco_full %>%
@@ -132,4 +132,4 @@ clean_census <- clean_census %>%
 
 
 clean_census %>% 
-  write_csv2("Data/Census_data.csv")  
+  write_csv2("../Data/Census_data.csv")  
