@@ -126,9 +126,13 @@ clean_census = clean_census %>%
 # Add industry share, non_agricultural share
 clean_census <- clean_census %>%
   mutate(
-    industry_share = Manufacturing_789 / Pop_m,
-    non_agricultural_share = (Pop_m - Farming) / Pop_m
+    labor_force = hisco_major0 + hisco_major1 + hisco_major2 + hisco_major3 +
+      hisco_major4 + hisco_major5 + hisco_major6 +
+      hisco_major7 + hisco_major8 + hisco_major9,
+    industry_share = Manufacturing_789 / labor_force,
+    non_agricultural_share = (labor_force - hisco_major6) / labor_force
   )
+
 
 
 clean_census %>% 
