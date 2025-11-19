@@ -100,8 +100,8 @@ summary_tables = function() {
   # Census table
   sum_table_census = make_summary(
     census,
-    vars = c("lnPopulation", "industry_share", "non_agricultural_share",
-             "Child_women_ratio", "HISCAM_avg", "lnMigration",
+    vars = c("Population", "industry_share", "non_agricultural_share",
+             "Child_women_ratio", "HISCAM_avg", "Migration",
              "Connected_railway"),
     labeller = outcomeNames
   )
