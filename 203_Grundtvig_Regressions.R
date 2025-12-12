@@ -5,6 +5,7 @@
 # Purpose:        Runs Grundtvig regressions
 
 rm(list = ls())
+set.seed(20)
 
 # ==== Libraries ====
 library(tidyverse)
@@ -58,6 +59,16 @@ twfe_models <- lapply(dep_vars, \(y) feols(
   data = grundtvig, cluster = ~ GIS_ID
 ))
 
+twfe_models_conley <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year + 
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
+  data = grundtvig, vcov = conley(cutoff = 50)
+))
+
 #############################################################
 # === Callaway and Sant’Anna Regressions, With controls === #
 #############################################################
@@ -92,6 +103,9 @@ cs_results <- extract_res(cs_aggs, grouped = FALSE)
 twfe_tidy   <- lapply(twfe_models, tidy)
 twfe_glance <- lapply(twfe_models, glance)
 
+twfe_tidy_conley   <- lapply(twfe_models_conley, tidy)
+twfe_glance_conley <- lapply(twfe_models_conley, glance)
+
 # store mean of outcome TWFE
 my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
@@ -99,11 +113,31 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 table_vals <- data.frame(
   outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
                 "Density Folk High Schools (MA)"),
-  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
-                     sapply(twfe_tidy, \(x) x$p.value[1])),
-  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
-  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
-  cs_se     = sprintf("(%.4f)", cs_results$SE),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  twfe_se_conley = sprintf("%.4f", sapply(twfe_tidy_conley, \(x) x$std.error[1])),
+  twfe_se_conley_stars = sapply(twfe_tidy_conley, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  cs_coef   = sprintf("%.4f", cs_results$Estimate),
+  cs_se     = sprintf("%.4f", cs_results$SE),
+  cs_se_stars = sapply(cs_results$p, \(p) {
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
   obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
   my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
   my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
@@ -124,7 +158,10 @@ cat("  Connected railway & ",
     paste(table_vals$twfe_coef, collapse=" & "),
     " \\\\\n")
 cat("                    & ",
-    paste(table_vals$twfe_se, collapse=" & "),
+    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(sprintf("[%s]$^{%s}$", table_vals$twfe_se_conley, table_vals$twfe_se_conley_stars), collapse=" & "),
     " \\\\\n")
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
@@ -132,14 +169,14 @@ cat("  Observations      & ",
     " \\\\\n")
 cat("  Mean of outcome   & ",
     paste(table_vals$my_twfe, collapse=" & "),
-    " \\\\\n")   # <-- TWFE means here
+    " \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 cat("  Connected railway & ",
     paste(table_vals$cs_coef, collapse=" & "),
     " \\\\\n")
 cat("                    & ",
-    paste(table_vals$cs_se, collapse=" & "),
+    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
     " \\\\\n")
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
@@ -147,7 +184,7 @@ cat("  Observations      & ",
     " \\\\\n")
 cat("  Mean of outcome   & ",
     paste(table_vals$my_cs, collapse=" & "),
-    " \\\\\n")   # <-- CS means here
+    " \\\\\n")
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
@@ -388,7 +425,7 @@ cat("  Connected railway & ",
     paste(table_vals$twfe_coef, collapse=" & "),
     " \\\\\n")
 cat("                    & ",
-    paste(table_vals$twfe_se, collapse=" & "),
+    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
     " \\\\\n")
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
@@ -396,7 +433,7 @@ cat("  Observations      & ",
     " \\\\\n")
 cat("  Mean of outcome   & ",
     paste(table_vals$my_twfe, collapse=" & "),
-    " \\\\\n")   # <-- TWFE means here
+    " \\\\\n")
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
@@ -413,6 +450,11 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 
 # Have a look at results
 etable(twfe_models, fitstat = ~ n + my)
+
+twfe_models_conley <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
+  data = grundtvig, vcov = conley(cutoff = 50)
+))
 
 ###########################################################
 # === Callaway and Sant’Anna Regressions, no controls === #
@@ -455,6 +497,9 @@ cs_results <- extract_res(cs_aggs, grouped = FALSE)
 twfe_tidy   <- lapply(twfe_models, tidy)
 twfe_glance <- lapply(twfe_models, glance)
 
+twfe_tidy_conley   <- lapply(twfe_models_conley, tidy)
+twfe_glance_conley <- lapply(twfe_models_conley, glance)
+
 # store mean of outcome TWFE
 my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
@@ -462,19 +507,39 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 table_vals <- data.frame(
   outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
                 "Density Folk High Schools (MA)"),
-  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
-                     sapply(twfe_tidy, \(x) x$p.value[1])),
-  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
-  cs_coef   = mapply(starify, cs_results$Estimate, cs_results$p),
-  cs_se     = sprintf("(%.4f)", cs_results$SE),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  twfe_se_conley = sprintf("%.4f", sapply(twfe_tidy_conley, \(x) x$std.error[1])),
+  twfe_se_conley_stars = sapply(twfe_tidy_conley, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  cs_coef   = sprintf("%.4f", cs_results$Estimate),
+  cs_se     = sprintf("%.4f", cs_results$SE),
+  cs_se_stars = sapply(cs_results$p, \(p) {
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
   obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
-  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
-  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
+  my_twfe   = sprintf("%.4f", my_twfe),                 # TWFE means
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome), # CS means
   obs_cs    = cs_results$n
 )
 
 # create and store latex table
-sink("Tables/railways_and_grundtvig.tex")
+sink("Tables/railways_and_grundtvig_controls.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -487,7 +552,10 @@ cat("  Connected railway & ",
     paste(table_vals$twfe_coef, collapse=" & "),
     " \\\\\n")
 cat("                    & ",
-    paste(table_vals$twfe_se, collapse=" & "),
+    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(sprintf("[%s]$^{%s}$", table_vals$twfe_se_conley, table_vals$twfe_se_conley_stars), collapse=" & "),
     " \\\\\n")
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
@@ -495,14 +563,14 @@ cat("  Observations      & ",
     " \\\\\n")
 cat("  Mean of outcome   & ",
     paste(table_vals$my_twfe, collapse=" & "),
-    " \\\\\n")   # <-- TWFE means here
+    " \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 cat("  Connected railway & ",
     paste(table_vals$cs_coef, collapse=" & "),
     " \\\\\n")
 cat("                    & ",
-    paste(table_vals$cs_se, collapse=" & "),
+    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
     " \\\\\n")
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
@@ -510,7 +578,7 @@ cat("  Observations      & ",
     " \\\\\n")
 cat("  Mean of outcome   & ",
     paste(table_vals$my_cs, collapse=" & "),
-    " \\\\\n")   # <-- CS means here
+    " \\\\\n")
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
