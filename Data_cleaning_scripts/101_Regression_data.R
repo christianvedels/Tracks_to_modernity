@@ -8,25 +8,23 @@
 library(tidyverse)
 library(foreach)
 library(readxl)
-source("000_Functions.R")
+source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Load data ====
-railways = read_csv2("../Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
-railways_StateTrunk = read_csv2("../Data/Panels_by_type/type2_StateTrunk.csv")
-railways_StateNonTrunk = read_csv2("../Data/Panels_by_type/type2_StateNonTrunk.csv")
-railways_Private = read_csv2("../Data/Panels_by_type/type2_Private.csv")
+railways = read_csv2("Data/Panel_of_railways_in_parishes.csv", guess_max = 10000)
+railways_StateTrunk = read_csv2("Data/Panels_by_type/type2_StateTrunk.csv")
+railways_StateNonTrunk = read_csv2("Data/Panels_by_type/type2_StateNonTrunk.csv")
+railways_Private = read_csv2("Data/Panels_by_type/type2_Private.csv")
 
-Assembly_houses = read_csv2("../Data/Panel_of_assembly_houses.csv", guess_max = 10000)
-Assembly_houses_MA = read_csv2("../Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
+Assembly_houses = read_csv2("Data/Panel_of_assembly_houses.csv", guess_max = 10000)
+Assembly_houses_MA = read_csv2("Data/Panel_of_MA_assembly_houses.csv", guess_max = 10000)
 
-Folk_high_schools = read_csv2("../Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
-Folk_high_schools_MA = read_csv2("../Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools = read_csv2("Data/Panel_of_folk_high_schools.csv", guess_max = 10000)
+Folk_high_schools_MA = read_csv2("Data/Panel_of_MA_folk_high_schools.csv", guess_max = 10000)
+census = read_csv2("Data/Census_data.csv", guess_max = 10000)  
+geo = read_csv2("Data/Geo_info.csv", guess_max = 2000)
 
-census = read_csv2("../Data/Census_data.csv", guess_max = 10000)  
-
-geo = read_csv2("../Data/Geo_info.csv", guess_max = 2000)
-
-distance_to_nodes = read_excel("../Data/distance_to_nodes.xlsx")
+distance_to_nodes = read_excel("Data/distance_to_nodes.xlsx")
 
 # ==== Join different raildata ====
 railways_StateTrunk = railways_StateTrunk %>% dplyr::select(-type2)
@@ -45,7 +43,7 @@ railways = railways %>%
   )
 
 # ==== Load instrument ====
-instrument = read_csv2("../Data/Instruments/paramS_scrit_2.csv") # 2 optimal according to confusion matrices
+instrument = read_csv2("Data/Instruments/paramS_scrit_2.csv") # 2 optimal according to confusion matrices
 
 instrument = instrument %>% 
   rename(
@@ -104,7 +102,7 @@ railways_assembly_houses = railways %>%
     by = c("GIS_ID", "Year")
   ) %>% 
   rename(MA_folkhigh = MA) %>% 
-  dplyr::select(-long, -lat) %>% 
+  # dplyr::select(-long, -lat) %>% 
   dplyr::select(-Parish) %>% 
   left_join(geo, by = "GIS_ID") %>% 
   left_join(pop1787, by = "GIS_ID") %>% 
@@ -369,7 +367,7 @@ grundtvig = left_join(grundtvig, invalid_comparison, by = "GIS_ID")
 
 # ==== Save data ====
 grundtvig %>% 
-  write_csv2("../Data/REGRESSION_DATA_Grundtvigianism.csv")
+  write_csv2("Data/REGRESSION_DATA_Grundtvigianism.csv")
 
 census %>% 
-  write_csv2("../Data/REGRESSION_DATA_Demography.csv")
+  write_csv2("Data/REGRESSION_DATA_Demography.csv")
