@@ -473,9 +473,9 @@ twfe_models <- lapply(dep_vars, \(y) feols(
   data = grundtvig, cluster = ~ GIS_ID
 ))
 
-############################################################################################
-# === Callaway and Sant’Anna Regressions with controls (SEs clustered at parish level) === #
-############################################################################################
+###############################################################################################
+# === Callaway and Sant’Anna Regressions without controls (SEs clustered at parish level) === #
+###############################################################################################
 
 # Estimate all models
 cs_models <- lapply(dep_vars, \(y) att_gt(
