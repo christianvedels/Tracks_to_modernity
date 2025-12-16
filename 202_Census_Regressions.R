@@ -340,44 +340,61 @@ for (i in seq_along(plots)) {
   )
 }
 
-##########################################
-# === TWFE Regressions, Instrumented === #
-##########################################
-
-# exclude nodes
-census_iv <- census %>%
-  filter(away_from_node == 1)
-
+###########################################################
+# === TWFE Regressions (se's clustered at the county) === #
+###########################################################
 twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp")),
-  data = census_iv, cluster = ~ GIS_ID
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year +
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
+  data = census, cluster = ~ County
 ))
 
-# Have a look at results
+# Have a look
 etable(twfe_models, 
        fitstat = ~ n + my, 
        keep = "Connected_railway")
 
-#######################
-# === First stage === #
-#######################
-etable(
-  twfe_models[[1]],
-  stage   = 1,
-  fitstat = ~ ivf,
-  dict = c(
-    "Connected_railway" = "Connected railway",
-    "Connected_lcp"     = "Connected LCP",
-    "GIS_ID" = "Parish"
-  ),
-  tex = T
-  #file = "../../Apps/Overleaf/Tracks to Modernity/Tables/first_stage_census.tex",
-  #replace = T
-)
 
-################################
-# === Prepare Output Table === #
-################################
+##############################################
+# === Callaway and Sant’Anna Regressions === #
+##############################################
+
+# Estimate models
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,    
+  tname   = "Year_num",        
+  idname  = "GIS_ID_num",     
+  gname   = "Treat_year",      
+  xformla = ~ dist_hmb + dist_cph + Pop1801 + county_by_year + DistOxRoad, 
+  data    = census,        
+  clustervars   = "County",
+  control_group = "nevertreated"
+))
+
+# Aggregate into overall ATTs
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+
+# Name the lists for easy reference
+names(cs_models) <- dep_vars
+names(cs_aggs)   <- dep_vars
+
+
+# Print all summaries one by one
+for (nm in names(cs_aggs)) {
+  cat("\n=== ", nm, " ===\n")
+  print(summary(cs_aggs[[nm]]))
+}
+
+##########################################
+# === Create and Export Output Table === #
+##########################################
+
+# Extract results from Callaway and St Anna
+cs_results <- extract_res(cs_aggs, grouped = FALSE)
 
 # Prepare TWFE results
 twfe_tidy   <- lapply(twfe_models, tidy)
@@ -399,18 +416,29 @@ table_vals <- data.frame(
     if (p < 0.1) return("*")
     return("")
   }),
+  cs_coef   = sprintf("%.4f", cs_results$Estimate),
+  cs_se     = sprintf("%.4f", cs_results$SE),
+  cs_se_stars = sapply(cs_results$p, \(p) {
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
   obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
-  my_twfe   = sprintf("%.4f", my_twfe)                # TWFE means
+  my_twfe   = sprintf("%.4f", my_twfe),
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),
+  obs_cs    = cs_results$n
 )
 
 # create and store latex table
-sink("Tables/tsls_railways_and_development.tex")
+sink("Tables/railways_and_development_controls_clustered_county.tex")
 
 cat("\\begin{tabular}{lcccccc}\n")
 cat("  \\toprule\n")
 cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
 cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
 cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 cat("  Connected railway & ",
     paste(table_vals$twfe_coef, collapse=" & "),
     " \\\\\n")
@@ -424,9 +452,25 @@ cat("  Observations      & ",
 cat("  Mean of outcome   & ",
     paste(table_vals$my_twfe, collapse=" & "),
     " \\\\\n")
+cat("  \\midrule\n")
+cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+cat("  Connected railway & ",
+    paste(table_vals$cs_coef, collapse=" & "),
+    " \\\\\n")
+cat("                    & ",
+    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
+    " \\\\\n")
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_cs, collapse=" & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_cs, collapse=" & "),
+    " \\\\\n")
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 sink()
+
 
 
 #########################################
