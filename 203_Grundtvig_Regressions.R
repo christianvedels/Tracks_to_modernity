@@ -46,9 +46,9 @@ grundtvig = grundtvig %>% mutate(
 # Dependent variables
 dep_vars <- c("Assembly_house", "HighSchool", "MA_assembly", "MA_folkhigh")
 
-###########################################
-# === TWFE Regressions, With controls === #
-###########################################
+##########################################################################
+# === TWFE Regressions with controls (SEs clustered at parish level) === #
+##########################################################################
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway +
                     Dist_hamb_year + 
@@ -59,19 +59,9 @@ twfe_models <- lapply(dep_vars, \(y) feols(
   data = grundtvig, cluster = ~ GIS_ID
 ))
 
-twfe_models_conley <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway +
-                    Dist_hamb_year + 
-                    Dist_cph_year + 
-                    Pop1801_year + 
-                    county_by_year + 
-                    Dist_ox_year | GIS_ID + Year")),
-  data = grundtvig, vcov = conley(cutoff = 50)
-))
-
-#############################################################
-# === Callaway and Sant’Anna Regressions, With controls === #
-#############################################################
+############################################################################################
+# === Callaway and Sant’Anna Regressions with controls (SEs clustered at parish level) === #
+############################################################################################
 
 # Estimate all models
 cs_models <- lapply(dep_vars, \(y) att_gt(
@@ -103,9 +93,6 @@ cs_results <- extract_res(cs_aggs, grouped = FALSE)
 twfe_tidy   <- lapply(twfe_models, tidy)
 twfe_glance <- lapply(twfe_models, glance)
 
-twfe_tidy_conley   <- lapply(twfe_models_conley, tidy)
-twfe_glance_conley <- lapply(twfe_models_conley, glance)
-
 # store mean of outcome TWFE
 my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
@@ -116,14 +103,6 @@ table_vals <- data.frame(
   twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
   twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
   twfe_se_stars = sapply(twfe_tidy, \(x) {
-    p <- x$p.value[1]
-    if (p < 0.01) return("***")
-    if (p < 0.05) return("**")
-    if (p < 0.1) return("*")
-    return("")
-  }),
-  twfe_se_conley = sprintf("%.4f", sapply(twfe_tidy_conley, \(x) x$std.error[1])),
-  twfe_se_conley_stars = sapply(twfe_tidy_conley, \(x) {
     p <- x$p.value[1]
     if (p < 0.01) return("***")
     if (p < 0.05) return("**")
@@ -145,7 +124,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("Tables/railways_and_grundtvig_controls.tex")
+sink("Tables/railways_and_grundtvig_controls_se_clustered_parish.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -153,42 +132,61 @@ cat("  \\toprule\n")
 cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$twfe_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
     " \\\\\n")
-cat("                    & ",
-    paste(sprintf("[%s]$^{%s}$", table_vals$twfe_se_conley, table_vals$twfe_se_conley_stars), collapse=" & "),
-    " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_twfe, collapse=" & "),
+    paste(table_vals$obs_twfe, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_twfe, collapse=" & "),
+    paste(table_vals$my_twfe, collapse = " & "),
     " \\\\\n")
+
 cat("  \\midrule\n")
+
+# --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$cs_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$cs_coef,
+                  table_vals$cs_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$cs_se),
+          collapse = " & "),
     " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_cs, collapse=" & "),
+    paste(table_vals$obs_cs, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_cs, collapse=" & "),
+    paste(table_vals$my_cs, collapse = " & "),
     " \\\\\n")
+
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
-cat("}\n")  # closes \resizebox
+cat("}\n")  # closes \\resizebox
+
 sink()
+
 
 
 ########################################
@@ -247,11 +245,9 @@ for (i in seq_along(plots)) {
 }
 
 
-
-
-###########################################################################
-# === TWFE Regressions, With controls (clustered at the county level) === #
-###########################################################################
+##########################################################################
+# === TWFE Regressions with controls (SEs clustered at parish level) === #
+##########################################################################
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway +
                     Dist_hamb_year + 
@@ -262,9 +258,9 @@ twfe_models <- lapply(dep_vars, \(y) feols(
   data = grundtvig, cluster = ~ County
 ))
 
-#############################################################################################
-# === Callaway and Sant’Anna Regressions, With controls (clustered at the county level) === #
-#############################################################################################
+############################################################################################
+# === Callaway and Sant’Anna Regressions with controls (SEs clustered at county level) === #
+############################################################################################
 
 # Estimate all models
 cs_models <- lapply(dep_vars, \(y) att_gt(
@@ -327,7 +323,7 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("Tables/railways_and_grundtvig_controls_clustered_county.tex")
+sink("Tables/railways_and_grundtvig_controls_se_clustered_county.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -335,38 +331,135 @@ cat("  \\toprule\n")
 cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$twfe_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
     " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_twfe, collapse=" & "),
+    paste(table_vals$obs_twfe, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_twfe, collapse=" & "),
+    paste(table_vals$my_twfe, collapse = " & "),
     " \\\\\n")
+
 cat("  \\midrule\n")
+
+# --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$cs_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$cs_coef,
+                  table_vals$cs_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$cs_se),
+          collapse = " & "),
     " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_cs, collapse=" & "),
+    paste(table_vals$obs_cs, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_cs, collapse=" & "),
+    paste(table_vals$my_cs, collapse = " & "),
+    " \\\\\n")
+
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+cat("}\n")  # closes \\resizebox
+
+sink()
+
+#######################################################
+# === TWFE Regressions with controls (Conley SEs) === #
+#######################################################
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year + 
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
+  data = grundtvig,
+  vcov = conley(cutoff = 50)
+))
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("Community house", "Folk high school", "Density Community houses (MA)",
+                "Density Folk High Schools (MA)"),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe)
+)
+
+# create and store latex table
+sink("Tables/railways_and_grundtvig_controls_se_clustered_Conley.tex")
+
+cat("\\resizebox{\\textwidth}{!}{%\n")
+cat("\\begin{tabular}{lcccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
+cat("           & (1) & (2) & (3) & (4)  \\\\\n")
+cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
+#cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
+cat("  Connected railway & ",
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("                    & ",
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("  \\cmidrule(lr){2-5}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse = " & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse = " & "),
     " \\\\\n")
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
-cat("}\n")  # closes \resizebox
+cat("}\n")  # closes \\resizebox
+
 sink()
 
 
@@ -374,19 +467,15 @@ sink()
 #########################################
 # === TWFE Regressions, no controls === #
 #########################################
+
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
   data = grundtvig, cluster = ~ GIS_ID
 ))
 
-twfe_models_conley <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
-  data = grundtvig, vcov = conley(cutoff = 50)
-))
-
-###########################################################
-# === Callaway and Sant’Anna Regressions, no controls === #
-###########################################################
+############################################################################################
+# === Callaway and Sant’Anna Regressions with controls (SEs clustered at parish level) === #
+############################################################################################
 
 # Estimate all models
 cs_models <- lapply(dep_vars, \(y) att_gt(
@@ -394,7 +483,7 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
   tname   = "Year_num",        
   idname  = "GIS_ID_num",     
   gname   = "Treat_year",      
-  xformla = ~1, 
+  xformla = ~ 1,  
   data    = grundtvig,        
   clustervars   = "GIS_ID",
   control_group = "nevertreated"
@@ -418,9 +507,6 @@ cs_results <- extract_res(cs_aggs, grouped = FALSE)
 twfe_tidy   <- lapply(twfe_models, tidy)
 twfe_glance <- lapply(twfe_models, glance)
 
-twfe_tidy_conley   <- lapply(twfe_models_conley, tidy)
-twfe_glance_conley <- lapply(twfe_models_conley, glance)
-
 # store mean of outcome TWFE
 my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
@@ -437,14 +523,6 @@ table_vals <- data.frame(
     if (p < 0.1) return("*")
     return("")
   }),
-  twfe_se_conley = sprintf("%.4f", sapply(twfe_tidy_conley, \(x) x$std.error[1])),
-  twfe_se_conley_stars = sapply(twfe_tidy_conley, \(x) {
-    p <- x$p.value[1]
-    if (p < 0.01) return("***")
-    if (p < 0.05) return("**")
-    if (p < 0.1) return("*")
-    return("")
-  }),
   cs_coef   = sprintf("%.4f", cs_results$Estimate),
   cs_se     = sprintf("%.4f", cs_results$SE),
   cs_se_stars = sapply(cs_results$p, \(p) {
@@ -454,13 +532,13 @@ table_vals <- data.frame(
     return("")
   }),
   obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
-  my_twfe   = sprintf("%.4f", my_twfe),                 # TWFE means
-  my_cs     = sprintf("%.4f", cs_results$mean_outcome), # CS means
+  my_twfe   = sprintf("%.4f", my_twfe),                # TWFE means
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),# CS means
   obs_cs    = cs_results$n
 )
 
 # create and store latex table
-sink("Tables/railways_and_grundtvig.tex")
+sink("Tables/railways_and_grundtvig_without_controls_se_clustered_parish.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
@@ -468,39 +546,60 @@ cat("  \\toprule\n")
 cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$twfe_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
     " \\\\\n")
-cat("                    & ",
-    paste(sprintf("[%s]$^{%s}$", table_vals$twfe_se_conley, table_vals$twfe_se_conley_stars), collapse=" & "),
-    " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_twfe, collapse=" & "),
+    paste(table_vals$obs_twfe, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_twfe, collapse=" & "),
+    paste(table_vals$my_twfe, collapse = " & "),
     " \\\\\n")
+
 cat("  \\midrule\n")
+
+# --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{5}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+
 cat("  Connected railway & ",
-    paste(table_vals$cs_coef, collapse=" & "),
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$cs_coef,
+                  table_vals$cs_se_stars),
+          collapse = " & "),
     " \\\\\n")
+
 cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$cs_se, table_vals$cs_se_stars), collapse=" & "),
+    paste(sprintf("(%s)", table_vals$cs_se),
+          collapse = " & "),
     " \\\\\n")
+
 cat("  \\cmidrule(lr){2-5}\n")
 cat("  Observations      & ",
-    paste(table_vals$obs_cs, collapse=" & "),
+    paste(table_vals$obs_cs, collapse = " & "),
     " \\\\\n")
 cat("  Mean of outcome   & ",
-    paste(table_vals$my_cs, collapse=" & "),
+    paste(table_vals$my_cs, collapse = " & "),
     " \\\\\n")
+
 cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
-cat("}\n")  # closes \resizebox
+cat("}\n")  # closes \\resizebox
+
 sink()
+
+
+
