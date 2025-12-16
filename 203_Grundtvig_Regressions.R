@@ -197,7 +197,7 @@ sink()
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
   list(
-    #group    = aggte(m, type = "group"),
+    group    = aggte(m, type = "group"),
     calendar = aggte(m, type = "calendar", na.rm = T),
     dynamic  = aggte(m, type = "dynamic", na.rm = T)
   )
@@ -352,92 +352,6 @@ for (i in seq_along(plots)) {
   )
 }
 
-##########################################
-# === TWFE Regressions, Instrumented === #
-##########################################
-
-# Exclude nodes
-grundtvig_iv <- grundtvig %>%
-  filter(away_from_node == 1)
-
-# Run TSLS regressions
-twfe_models <- lapply(dep_vars, \(y) feols(
-  as.formula(paste0(y, " ~ 1 | GIS_ID + Year | Connected_railway ~ Connected_lcp")),
-  data = grundtvig_iv, cluster = ~ GIS_ID
-))
-
-# Have a look
-etable(twfe_models,
-       fitstat =  ~ n + my)
-
-
-#######################
-# === First stage === #
-#######################
-etable(
-  twfe_models[[1]],
-  stage   = 1,
-  fitstat = ~ ivf,
-  dict = c(
-    "Connected_railway" = "Connected railway",
-    "Connected_lcp"     = "Connected LCP",
-    "GIS_ID" = "Parish"
-  ),
-  tex = T
-  #file = "../../Apps/Overleaf/Tracks to Modernity/Tables/first_stage_census.tex",
-  #replace = T
-)
-
-
-
-################################
-# === Prepare Output Table === #
-################################
-
-# Prepare TWFE results
-twfe_tidy   <- lapply(twfe_models, tidy)
-twfe_glance <- lapply(twfe_models, glance)
-
-# store mean of outcome TWFE
-my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
-
-# create output table
-table_vals <- data.frame(
-  outcome   = c("Community house", "Folk high school", "Density Community houses (MA)",
-                "Density Folk High Schools (MA)"),
-  twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
-                     sapply(twfe_tidy, \(x) x$p.value[1])),
-  twfe_se   = sapply(twfe_tidy, \(x) sprintf("(%.4f)", x$std.error[1])),
-  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
-  my_twfe   = sprintf("%.4f", my_twfe)                # TWFE means
-)
-
-# create and store latex table
-sink("Tables/tsls_railways_and_grundtvig.tex")
-
-cat("\\resizebox{\\textwidth}{!}{%\n")
-cat("\\begin{tabular}{lcccc}\n")
-cat("  \\toprule\n")
-cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
-cat("           & (1) & (2) & (3) & (4)  \\\\\n")
-cat("  \\midrule\n")
-cat("  Connected railway & ",
-    paste(table_vals$twfe_coef, collapse=" & "),
-    " \\\\\n")
-cat("                    & ",
-    paste(sprintf("(%s)$^{%s}$", table_vals$twfe_se, table_vals$twfe_se_stars), collapse=" & "),
-    " \\\\\n")
-cat("  \\cmidrule(lr){2-5}\n")
-cat("  Observations      & ",
-    paste(table_vals$obs_twfe, collapse=" & "),
-    " \\\\\n")
-cat("  Mean of outcome   & ",
-    paste(table_vals$my_twfe, collapse=" & "),
-    " \\\\\n")
-cat("  \\bottomrule\n")
-cat("\\end{tabular}\n")
-cat("}\n")  # closes \resizebox
-sink()
 
 #########################################
 # === TWFE Regressions, no controls === #
