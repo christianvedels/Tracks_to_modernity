@@ -246,7 +246,7 @@ for (i in seq_along(plots)) {
 
 
 ##########################################################################
-# === TWFE Regressions with controls (SEs clustered at parish level) === #
+# === TWFE Regressions with controls (SEs clustered at county level) === #
 ##########################################################################
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway +
