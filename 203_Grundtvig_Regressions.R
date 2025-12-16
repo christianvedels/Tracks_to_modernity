@@ -197,7 +197,7 @@ sink()
 # Run all decompositions for each outcome
 cs_decomp <- lapply(cs_models, function(m) {
   list(
-    group    = aggte(m, type = "group"),
+    group    = aggte(m, type = "group", na.rm =T),
     calendar = aggte(m, type = "calendar", na.rm = T),
     dynamic  = aggte(m, type = "dynamic", na.rm = T)
   )
