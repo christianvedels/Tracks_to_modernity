@@ -356,14 +356,10 @@ for (i in seq_along(plots)) {
 #########################################
 # === TWFE Regressions, no controls === #
 #########################################
-
 twfe_models <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
   data = grundtvig, cluster = ~ GIS_ID
 ))
-
-# Have a look at results
-etable(twfe_models, fitstat = ~ n + my)
 
 twfe_models_conley <- lapply(dep_vars, \(y) feols(
   as.formula(paste0(y, " ~ Connected_railway | GIS_ID + Year")),
@@ -387,18 +383,11 @@ cs_models <- lapply(dep_vars, \(y) att_gt(
 ))
 
 # Aggregate into overall ATTs
-cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple", na.rm = TRUE))
 
 # Name the lists for easy reference
 names(cs_models) <- dep_vars
 names(cs_aggs)   <- dep_vars
-
-
-# Print all summaries one by one
-for (nm in names(cs_aggs)) {
-  cat("\n=== ", nm, " ===\n")
-  print(summary(cs_aggs[[nm]]))
-}
 
 ################################
 # === Prepare Output Table === #
@@ -497,5 +486,3 @@ cat("  \\bottomrule\n")
 cat("\\end{tabular}\n")
 cat("}\n")  # closes \resizebox
 sink()
-
-
