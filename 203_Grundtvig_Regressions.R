@@ -111,7 +111,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
+  outcome   = c("Community house", "Folk high school", "Density Community houses (MA)",
                 "Density Folk High Schools (MA)"),
   twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
   twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
@@ -150,7 +150,7 @@ sink("Tables/railways_and_grundtvig_controls.tex")
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & Assembly house & Folk high school & \\makecell{Density Assembly \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
+cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
@@ -403,7 +403,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
+  outcome   = c("Community house", "Folk high school", "Density Community houses (MA)",
                 "Density Folk High Schools (MA)"),
   twfe_coef = mapply(starify, sapply(twfe_tidy, \(x) x$estimate[1]),
                      sapply(twfe_tidy, \(x) x$p.value[1])),
@@ -418,7 +418,7 @@ sink("Tables/tsls_railways_and_grundtvig.tex")
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & Assembly house & Folk high school & \\makecell{Density Assembly \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
+cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
 cat("  Connected railway & ",
@@ -505,7 +505,7 @@ my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
 
 # create output table
 table_vals <- data.frame(
-  outcome   = c("Assembly house", "Folk high school", "Density Assembly houses (MA)",
+  outcome   = c("Community house", "Folk high school", "Density Community houses (MA)",
                 "Density Folk High Schools (MA)"),
   twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
   twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
@@ -539,12 +539,12 @@ table_vals <- data.frame(
 )
 
 # create and store latex table
-sink("Tables/railways_and_grundtvig_controls.tex")
+sink("Tables/railways_and_grundtvig.tex")
 
 cat("\\resizebox{\\textwidth}{!}{%\n")
 cat("\\begin{tabular}{lcccc}\n")
 cat("  \\toprule\n")
-cat("  Outcome: & Assembly house & Folk high school & \\makecell{Density Assembly \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
+cat("  Outcome: & Community house & Folk high school & \\makecell{Density Community \\\\ houses (MA)} & \\makecell{Density Folk High \\\\ Schools (MA)} \\\\\n")
 cat("           & (1) & (2) & (3) & (4)  \\\\\n")
 cat("  \\midrule\n")
 cat("  \\multicolumn{5}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
