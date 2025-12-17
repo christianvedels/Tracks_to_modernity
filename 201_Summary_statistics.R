@@ -219,6 +219,165 @@ census_distributions_by_year = function(){
   ggsave("Plots/Densities_census_treat_year.png", p1, width = dims$width, height = dims$height)
 }
 
+# ==== Kolmogorov-Smirnov tests ====
+ks_tests_ever_treated = function(){
+  tmp = census %>%
+    group_by(GIS_ID) %>%
+    mutate(Ever_rail = ifelse(mean(Connected_railway) > 0, "Yes", "No")) %>%
+    filter(Year == 1850)
+  
+  tmp = tmp %>%
+    filter(Connected_railway == 0) %>%
+    mutate(
+      lnpop1801 = log(Pop1801),
+      Ever_rail_binary = ifelse(Ever_rail == "Yes", 1, 0)
+    )
+  
+  # Variables to test
+  vars = c("lnPopulation", "Child_women_ratio", "industry_share",
+            "non_agricultural_share", "HISCAM_avg", "lnMigration", 
+            "dist_hmb", "dist_cph", "DistOxRoad", "lnpop1801")
+  
+  # 0. Compute mean and standard deviation
+  mean_sd_results = lapply(vars, function(var) {
+    vals = tmp %>% 
+      pull(!!sym(var)) %>% 
+      na.omit()
+    
+    data.frame(
+      Variable = var,
+      Mean = mean(vals, na.rm = TRUE),
+      SD = sd(vals, na.rm = TRUE)
+    )
+  }) %>%
+    bind_rows()
+  
+  # 1. Compute regressions (instead of t-tests)
+  reg_results = lapply(vars, function(var) {
+    formula_str = paste0(var, " ~ Ever_rail_binary")
+    reg = tryCatch(lm(as.formula(formula_str), data = tmp), error = function(e) NULL)
+    
+    if (!is.null(reg)) {
+      coef_summary = summary(reg)$coefficients
+      if(nrow(coef_summary) >= 2) {
+        data.frame(
+          Variable     = var,
+          Coefficient  = coef_summary[2, "Estimate"],
+          Std_Error    = coef_summary[2, "Std. Error"],
+          t_statistic  = coef_summary[2, "t value"],
+          p_value      = coef_summary[2, "Pr(>|t|)"],
+          N            = nobs(reg),
+          R_squared    = summary(reg)$r.squared
+        )
+      } else {
+        data.frame(
+          Variable = var, Coefficient = NA, Std_Error = NA,
+          t_statistic = NA, p_value = NA, N = NA, R_squared = NA
+        )
+      }
+    } else {
+      data.frame(
+        Variable = var, Coefficient = NA, Std_Error = NA,
+        t_statistic = NA, p_value = NA, N = NA, R_squared = NA
+      )
+    }
+  }) %>%
+    bind_rows()
+  
+  # 2. Compute KS tests
+  ks_results = lapply(vars, function(var) {
+    no_vals = tmp %>% 
+      filter(Ever_rail == "No") %>% 
+      pull(!!sym(var)) %>% 
+      na.omit()
+    
+    yes_vals = tmp %>% 
+      filter(Ever_rail == "Yes") %>% 
+      pull(!!sym(var)) %>% 
+      na.omit()
+    
+    if(length(no_vals) > 0 & length(yes_vals) > 0) {
+      ks_result = ks.test(no_vals, yes_vals)
+      data.frame(
+        Variable = var,
+        D_statistic = ks_result$statistic,
+        ks_pvalue = ks_result$p.value
+      )
+    } else {
+      data.frame(
+        Variable = var,
+        D_statistic = NA,
+        ks_pvalue = NA
+      )
+    }
+  }) %>%
+    bind_rows()
+  
+  # 3. Construct regression table with KS test column
+  combined_results = reg_results %>%
+    left_join(ks_results, by = "Variable") %>%
+    left_join(mean_sd_results, by = "Variable") %>%
+    mutate(
+      Variable = outcomeNames(Variable),
+      Mean = round(Mean, 3),
+      SD = round(SD, 3),
+      Coefficient = round(Coefficient, 3),
+      Std_Error = round(Std_Error, 3),
+      p_sig = case_when(
+        p_value < 0.01 ~ "***",
+        p_value < 0.05 ~ "**",
+        p_value < 0.10 ~ "*",
+        TRUE ~ ""
+      ),
+      coef_str = paste0(Coefficient, p_sig),
+      se_str = paste0("(", Std_Error, ")"),
+      D_statistic = round(D_statistic, 3),
+      ks_pvalue = round(ks_pvalue, 3),
+      ks_sig = case_when(
+        ks_pvalue < 0.01 ~ "***",
+        ks_pvalue < 0.05 ~ "**",
+        ks_pvalue < 0.10 ~ "*",
+        TRUE ~ ""
+      ),
+      ks_str = paste0(D_statistic, ks_sig)
+    )
+  
+  # Create table with coefficients, std errors in parentheses, and KS column
+  # Need to create long format with interleaved coefficient and SE rows
+  table_rows = lapply(1:nrow(combined_results), function(i) {
+    data.frame(
+      Variable = c(combined_results$Variable[i], ""),
+      Mean = c(combined_results$Mean[i], ""),
+      SD = c(combined_results$SD[i], ""),
+      `Ever Connected` = c(combined_results$coef_str[i], combined_results$se_str[i]),
+      `KS D-stat` = c(combined_results$ks_str[i], ""),
+      check.names = FALSE,
+      stringsAsFactors = FALSE
+    )
+  }) %>% bind_rows()
+  
+  combined_tex = table_rows %>%
+    kable(
+      format = "latex",
+      booktabs = TRUE,
+      caption = "Regression Tests: Ever Connected vs Never Connected",
+      align = "lcccc",
+      escape = FALSE
+    ) %>%
+    kable_styling(
+      latex_options = c("hold_position")
+    ) %>%
+    footnote(
+      general = "Mean and standard deviation of each variable. OLS regressions of each variable on Ever Connected indicator (1=eventually connected, 0=never connected). Standard errors in parentheses. KS D-stat shows Kolmogorov-Smirnov test statistic. Significance: * p<0.10, ** p<0.05, *** p<0.01",
+      threeparttable = TRUE
+    )
+  
+  # 4. Save table
+  sink("Tables/Distribution_tests_ever_treated.txt")
+  print(combined_tex)
+  sink()
+  print(combined_tex)
+}
 
 # ==== Grundtvig over time ====
 grundtvig_distributions_over_time = function(){
@@ -251,6 +410,7 @@ main = function(){
   summary_tables()
   census_distributions()
   census_distributions_by_year()
+  ks_tests_ever_treated()
   grundtvig_distributions_over_time()
 }
 

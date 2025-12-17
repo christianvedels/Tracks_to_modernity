@@ -1,0 +1,40 @@
+\begin{table}[!h]
+\centering
+\caption{Regression Tests: Ever Connected vs Never Connected}
+\centering
+\begin{threeparttable}
+\begin{tabular}[t]{lcccc}
+\toprule
+Variable & Mean & SD & Ever Connected & KS D-stat\\
+\midrule
+log(Population) & 6.315 & 0.626 & 0.167*** & 0.137***\\
+ &  &  & (0.032) & \\
+Child-women ratio & 0.444 & 0.094 & 0.007 & 0.039\\
+ &  &  & (0.005) & \\
+Manufacturing & 0.245 & 0.08 & 0.01** & 0.076**\\
+\addlinespace
+ &  &  & (0.004) & \\
+Not agriculture & 0.299 & 0.089 & 0.012*** & 0.083***\\
+ &  &  & (0.005) & \\
+HISCAM avg & 47.872 & 1.264 & 0.004 & 0.055\\
+ &  &  & (0.064) & \\
+\addlinespace
+log(Migration) & 4.112 & 1.876 & 0.315*** & 0.102***\\
+ &  &  & (0.097) & \\
+Distance to Hamburg & 283.734 & 69.693 & -1.543 & 0.056\\
+ &  &  & (3.541) & \\
+Distance to Copenhagen & 163.897 & 73.447 & -6.501* & 0.065*\\
+\addlinespace
+ &  &  & (3.728) & \\
+Distance to Oxroad & 71.853 & 64.757 & 1.442 & 0.03\\
+ &  &  & (3.291) & \\
+log(Population 1801) & 5.912 & 0.603 & 0.133*** & 0.113***\\
+ &  &  & (0.03) & \\
+\bottomrule
+\end{tabular}
+\begin{tablenotes}
+\item \textit{Note: } 
+\item Mean and standard deviation of each variable. OLS regressions of each variable on Ever Connected indicator (1=eventually connected, 0=never connected). Standard errors in parentheses. KS D-stat shows Kolmogorov-Smirnov test statistic. Significance: * p<0.10, ** p<0.05, *** p<0.01
+\end{tablenotes}
+\end{threeparttable}
+\end{table}
