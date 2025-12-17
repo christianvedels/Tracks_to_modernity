@@ -562,6 +562,156 @@ cat("\\end{tabular}\n")
 
 sink()
 
+###################################################################
+# === TWFE Regressions with controls (Conley SEs) 25KM cutoff === #
+###################################################################
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year +
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
+  data = census,
+  vcov = conley(cutoff = 25)
+))
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe)
+)
+
+# create and store latex table
+sink("Tables/railways_and_development_controls_se_clustered_Conley_25km.tex")
+
+cat("\\begin{tabular}{lcccccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
+cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
+#cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
+cat("  Connected railway & ",
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("                    & ",
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse = " & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse = " & "),
+    " \\\\\n")
+
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+
+sink()
+
+###################################################################
+# === TWFE Regressions with controls (Conley SEs) 10KM cutoff === #
+###################################################################
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year +
+                    Dist_cph_year + 
+                    Pop1801_year + 
+                    county_by_year + 
+                    Dist_ox_year | GIS_ID + Year")),
+  data = census,
+  vcov = conley(cutoff = 10)
+))
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe)
+)
+
+# create and store latex table
+sink("Tables/railways_and_development_controls_se_clustered_Conley_10km.tex")
+
+cat("\\begin{tabular}{lcccccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
+cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
+#cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
+cat("  Connected railway & ",
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("                    & ",
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse = " & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse = " & "),
+    " \\\\\n")
+
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+
+sink()
+
 
 
 
