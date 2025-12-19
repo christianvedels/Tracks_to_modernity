@@ -29,7 +29,7 @@ $\rightarrow$ [Slides](https://rawcdn.githack.com/christianvedels/Tracks_to_mode
   ```
 </details>
 
-![Conceptual Framework](Plots/conceptual_framework.jpg)
+![Conceptual Framework](Plots/Conceptual_framework.pdf)
 
 -------------
 
