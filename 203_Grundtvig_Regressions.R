@@ -198,7 +198,7 @@ cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group", na.rm =T),
     calendar = aggte(m, type = "calendar", na.rm = T),
-    dynamic  = aggte(m, type = "dynamic", na.rm = T)
+    dynamic  = aggte(m, type = "dynamic", min_e = -40, max_e = 40, na.rm = T)
   )
 })
 
