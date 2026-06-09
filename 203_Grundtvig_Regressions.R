@@ -216,16 +216,16 @@ plots <- lapply(names(cs_decomp), function(v) {
   
   ggplot(dat, aes(x = x, y = y, color = factor(group))) +
     geom_point(size = 4) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
-    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, size = 1) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, linewidth = 1) +
     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    scale_x_continuous(breaks = c(-40, -20, 0, 20, 40)) +
     theme_minimal(base_size = 30) +
     labs(
       x = "Years since treatment",
       y = NULL,
       title = NULL,
-      color = NULL,
-      fill  = "Confidence Interval"
+      color = NULL
     ) +
     theme(legend.position = "none")
 })
