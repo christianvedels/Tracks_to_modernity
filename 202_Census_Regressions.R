@@ -194,7 +194,7 @@ cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group"),
     calendar = aggte(m, type = "calendar"),
-    dynamic = aggte(m, type = "dynamic")
+    dynamic = aggte(m, type = "dynamic", min_e = -40, max_e = 20)
   )
 })
 
@@ -212,20 +212,19 @@ plots <- lapply(names(cs_decomp), function(v) {
   
   ggplot(dat, aes(x = x, y = y, color = factor(group))) +
     geom_point(size = 8) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
-    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, size = 2) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
     scale_x_continuous(
-      limits = c(-45, 45),
-      breaks = seq(-40, 40, by = 20)
+      limits = c(-45, 25),
+      breaks = seq(-40, 20, by = 20)
     ) +
     theme_minimal(base_size = 30) +
     labs(
       x = "Years since treatment",
       y = NULL,
       title = NULL,
-      color = NULL,
-      fill  = "Confidence Interval"
+      color = NULL
     ) +
     theme(legend.position = "none")
 })
