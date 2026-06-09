@@ -194,7 +194,7 @@ cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group"),
     calendar = aggte(m, type = "calendar"),
-    dynamic = aggte(m, type = "dynamic", min_e = -40, max_e = 20)
+    dynamic = aggte(m, type = "dynamic", min_e = -20, max_e = 20)
   )
 })
 
@@ -216,8 +216,8 @@ plots <- lapply(names(cs_decomp), function(v) {
     geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
     scale_x_continuous(
-      limits = c(-45, 25),
-      breaks = seq(-40, 20, by = 20)
+      limits = c(-25, 25),
+      breaks = seq(-20, 20, by = 20)
     ) +
     theme_minimal(base_size = 30) +
     labs(
