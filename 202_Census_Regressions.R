@@ -201,9 +201,9 @@ cs_decomp <- lapply(cs_models, function(m) {
 # Name lists
 names(cs_decomp) <- dep_vars
 
-#########################
-# === Dynamic plots === #
-#########################
+#################################
+# === Dynamic plots -20 +20 === #
+#################################
 
 # create plots
 plots <- lapply(names(cs_decomp), function(v) {
@@ -238,6 +238,54 @@ for (i in seq_along(plots)) {
   filename <- paste0("p", i, "_", varname, ".png")
   ggsave(
     filename = file.path("Plots/decomposition_census_dynamic_controls", filename),
+    plot = plots[[i]],
+    width = dims$width, height = dims$height, dpi = 300
+  )
+}
+
+##################################
+# === Dynamic plots -40 + 20 === #
+##################################
+
+# Dynamic aggregation only, for each outcome
+cs_dynamic <- lapply(cs_models, function(m) {
+  aggte(m, type = "dynamic", min_e = -40, max_e = 20)
+})
+names(cs_dynamic) <- dep_vars
+
+# create plots
+plots <- lapply(names(cs_dynamic), function(v) {
+  base_plot <- ggdid(cs_dynamic[[v]])
+  dat <- layer_data(base_plot)  # extract coefficients + CI
+  
+  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+    geom_point(size = 8) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
+    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
+    scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    scale_x_continuous(
+      limits = c(-45, 25),
+      breaks = seq(-40, 20, by = 20)
+    ) +
+    theme_minimal(base_size = 30) +
+    labs(
+      x = "Years since treatment",
+      y = NULL,
+      title = NULL,
+      color = NULL
+    ) +
+    theme(legend.position = "none")
+})
+
+# View the first one
+plots[[1]]
+
+# Save plots with names p1_varname, p2_varname, ...
+for (i in seq_along(plots)) {
+  varname <- dep_vars[i]
+  filename <- paste0("p", i, "_", varname, ".png")
+  ggsave(
+    filename = file.path("Plots/decomposition_census_dynamic_controls_40_20", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
