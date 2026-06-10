@@ -283,9 +283,9 @@ plots[[1]]
 # Save plots with names p1_varname, p2_varname, ...
 for (i in seq_along(plots)) {
   varname <- dep_vars[i]
-  filename <- paste0("p", i, "_", varname, ".png")
+  filename <- paste0("p", i, "_", varname, "40_20", ".png")
   ggsave(
-    filename = file.path("Plots/decomposition_census_dynamic_controls_40_20", filename),
+    filename = file.path("Plots/decomposition_census_dynamic_controls/window_minus_40_to_plus_20", filename),
     plot = plots[[i]],
     width = dims$width, height = dims$height, dpi = 300
   )
