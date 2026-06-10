@@ -432,7 +432,7 @@ census_outcomes_over_time = function(){
     geom_line() +
     geom_point() +
     facet_wrap(~var, scales = "free", ncol = 3) +
-    scale_x_continuous(breaks = c(1850, 1860, 1880, 1901)) +
+    scale_x_continuous(breaks = c(1850, 1860, 1880, 1901), minor_breaks = NULL) +
     theme_bw() +
     labs(col = "Eventually connected to railway?", x = "Year", y = "") +
     scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
