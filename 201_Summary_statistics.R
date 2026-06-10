@@ -7,7 +7,6 @@
 # ==== Libraries ====
 library(tidyverse)
 library(kableExtra) # for latex tables
-library(patchwork) # for combined plots
 
 source("Data_cleaning_scripts/000_Functions.R")
 
@@ -408,7 +407,14 @@ grundtvig_distributions_over_time = function(){
 
 # ==== Figure: Census outcomes over time by railroad connection ====
 census_outcomes_over_time = function(){
+  # Parishes already connected in 1850 (8 of 1589), excluded as in Figure 4
+  already_connected_1850 = census %>%
+    filter(Year == 1850, Connected_railway == 1) %>%
+    distinct(GIS_ID) %>%
+    pull(GIS_ID)
+  
   p1 = census %>%
+    filter(!GIS_ID %in% already_connected_1850) %>%
     group_by(GIS_ID) %>%
     mutate(Ever_rail = ifelse(mean(Connected_railway) > 0, "Yes", "No")) %>%
     ungroup() %>%
