@@ -7,6 +7,7 @@
 # ==== Libraries ====
 library(tidyverse)
 library(kableExtra) # for latex tables
+
 source("Data_cleaning_scripts/000_Functions.R")
 
 
@@ -404,6 +405,43 @@ grundtvig_distributions_over_time = function(){
   ggsave("Plots/Grundtvig_over_time.png", p1, width = dims$width, height = 1.25*dims$height)
 }
 
+# ==== Figure: Census outcomes over time by railroad connection ====
+census_outcomes_over_time = function(){
+  # Parishes already connected in 1850 (8 of 1589), excluded as in Figure 4
+  already_connected_1850 = census %>%
+    filter(Year == 1850, Connected_railway == 1) %>%
+    distinct(GIS_ID) %>%
+    pull(GIS_ID)
+  
+  p1 = census %>%
+    filter(!GIS_ID %in% already_connected_1850) %>%
+    group_by(GIS_ID) %>%
+    mutate(Ever_rail = ifelse(mean(Connected_railway) > 0, "Yes", "No")) %>%
+    ungroup() %>%
+    select(Year_num, Ever_rail, lnPopulation, Child_women_ratio, industry_share,
+           non_agricultural_share, HISCAM_avg, lnMigration) %>%
+    pivot_longer(
+      cols = c(lnPopulation, Child_women_ratio, industry_share,
+               non_agricultural_share, HISCAM_avg, lnMigration),
+      names_to = "var"
+    ) %>%
+    mutate(var = outcomeNames(var)) %>%
+    group_by(var, Year_num, Ever_rail) %>%
+    summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+    ggplot(aes(x = Year_num, y = mean_value, col = Ever_rail)) +
+    geom_line() +
+    geom_point() +
+    facet_wrap(~var, scales = "free", ncol = 3) +
+    scale_x_continuous(breaks = c(1850, 1860, 1880, 1901), minor_breaks = NULL) +
+    theme_bw() +
+    labs(col = "Eventually connected to railway?", x = "Year", y = "") +
+    scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
+    theme(legend.position = "bottom")
+  
+  print(p1)
+  ggsave("Plots/Census_outcomes_over_time.png", p1, width = dims$width, height = dims$height)
+}
+
 
 # ===== main ==== 
 main = function(){
@@ -412,6 +450,15 @@ main = function(){
   census_distributions_by_year()
   ks_tests_ever_treated()
   grundtvig_distributions_over_time()
+  census_outcomes_over_time()
 }
 
 main()
+
+
+
+
+
+
+
+
