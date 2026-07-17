@@ -486,7 +486,7 @@ extract_res = function(summary_results, grouped = FALSE){
           n = x$DIDparams$data %>% NROW(),
           n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
           control_group = x$DIDparams$control_group,
-          mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+          mean_outcome = mean(unlist(as.data.frame(x$DIDparams$data)[x$DIDparams$yname])),
           outcome = x$DIDparams$yname
         )
       }
@@ -504,7 +504,7 @@ extract_res = function(summary_results, grouped = FALSE){
         n = x$DIDparams$data %>% NROW(),
         n_parishes = length(unique(x$DIDparams$data$GIS_ID)),
         control_group = x$DIDparams$control_group,
-        mean_outcome = mean(unlist(x$DIDparams$data[x$DIDparams$yname])),
+        mean_outcome = mean(unlist(as.data.frame(x$DIDparams$data)[x$DIDparams$yname])),
         outcome = x$DIDparams$yname
       )
     }
