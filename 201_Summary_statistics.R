@@ -46,7 +46,7 @@ outcomeNames = function(x){
     x == "non_agricultural_share" ~ "Not agriculture",
     x == "HISCAM_avg" ~ "HISCAM avg",
     x == "lnMigration" ~ "log(Migration)",
-    x == "Connected_railway" ~ "Connected railway",
+    x == "Connected_railway" ~ "Connected railroad",
     x == "Connected_lcp" ~ "Connected LCP",
     x == "dist_hmb" ~ "Distance to Hamburg",
     x == "dist_cph" ~ "Distance to Copenhagen",
@@ -62,7 +62,7 @@ outcomeNames_grundtvig = function(x){
   case_when(
     x == "Assembly_house" ~ "Assembly house",
     x == "HighSchool" ~ "Folk high school",
-    x == "Connected_railway" ~ "Connected railway",
+    x == "Connected_railway" ~ "Connected railroad",
     x == "Connected_lcp" ~ "Connected LCP",
     x == "MA_assembly" ~ "Density Assembly houses (MA)",
     x == "MA_folkhigh" ~ "Density Folk high schools (MA)",

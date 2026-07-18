@@ -134,7 +134,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -159,7 +159,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -473,7 +473,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -498,7 +498,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -584,7 +584,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -659,7 +659,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -734,7 +734,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -858,7 +858,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -883,7 +883,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -1006,7 +1006,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -1031,7 +1031,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
