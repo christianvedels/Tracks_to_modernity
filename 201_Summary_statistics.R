@@ -169,7 +169,7 @@ census_distributions = function(){
     geom_density(alpha = 0.5) + 
     facet_wrap(~var, scales = "free", ncol = 3) +
     theme_bw() +
-    labs(fill = "Eventually connected to railway?", x = "", y = "") +
+    labs(fill = "Eventually connected to railroad?", x = "", y = "") +
     scale_fill_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
     theme(legend.position = "bottom")
   
@@ -397,7 +397,7 @@ grundtvig_distributions_over_time = function(){
     geom_point() +
     facet_wrap(~var, scales = "free", ncol = 1) +
     theme_bw() +
-    labs(col = "Eventually connected to railway?", y = "") +
+    labs(col = "Eventually connected to railroad?", y = "") +
     scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
     theme(legend.position = "bottom")
   
@@ -425,7 +425,12 @@ census_outcomes_over_time = function(){
                non_agricultural_share, HISCAM_avg, lnMigration),
       names_to = "var"
     ) %>%
-    mutate(var = outcomeNames(var)) %>%
+    # Order panels to match the regression table (Table: Railroads and Local Development)
+    mutate(var = factor(
+      outcomeNames(var),
+      levels = c("log(Population)", "Child-women ratio", "Manufacturing",
+                 "Not agriculture", "HISCAM avg", "log(Migration)")
+    )) %>%
     group_by(var, Year_num, Ever_rail) %>%
     summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
     ggplot(aes(x = Year_num, y = mean_value, col = Ever_rail)) +
@@ -434,7 +439,7 @@ census_outcomes_over_time = function(){
     facet_wrap(~var, scales = "free", ncol = 3) +
     scale_x_continuous(breaks = c(1850, 1860, 1880, 1901), minor_breaks = NULL) +
     theme_bw() +
-    labs(col = "Eventually connected to railway?", x = "Year", y = "") +
+    labs(col = "Eventually connected to railroad?", x = "Year", y = "") +
     scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
     theme(legend.position = "bottom")
   

@@ -15,14 +15,14 @@ Variable & N & Mean & SD & Min & Max\\
 \hspace{1em}Child-women ratio & 6336 & 0.488 & 0.111 & 0.000 & 1.364\\
 \hspace{1em}HISCAM avg & 6355 & 48.631 & 1.503 & 44.235 & 82.850\\
 \hspace{1em}Migration & 6356 & 263.233 & 390.587 & 0.000 & 4299.000\\
-\hspace{1em}Connected railway & 6356 & 0.176 & 0.381 & 0.000 & 1.000\\
+\hspace{1em}Connected railroad & 6356 & 0.176 & 0.381 & 0.000 & 1.000\\
 \addlinespace[0.3em]
 \multicolumn{6}{l}{\textbf{B. Grundtvig}}\\
 \hspace{1em}Assembly house & 119175 & 0.171 & 0.377 & 0.000 & 1.000\\
 \hspace{1em}Folk high school & 119175 & 0.029 & 0.169 & 0.000 & 1.000\\
 \hspace{1em}Density Assembly houses (MA) & 119175 & 4.464 & 5.404 & 0.000 & 20.353\\
 \hspace{1em}Density Folk high schools (MA) & 119175 & 0.702 & 0.426 & 0.005 & 3.784\\
-\hspace{1em}Connected railway & 119175 & 0.258 & 0.437 & 0.000 & 1.000\\
+\hspace{1em}Connected railroad & 119175 & 0.258 & 0.437 & 0.000 & 1.000\\
 \bottomrule
 \end{tabular}}
 \end{table}
