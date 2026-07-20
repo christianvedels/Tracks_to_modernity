@@ -134,7 +134,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -159,7 +159,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -473,7 +473,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -498,7 +498,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -584,7 +584,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -659,7 +659,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -734,7 +734,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 #cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -858,7 +858,7 @@ cat("  \\midrule\n")
 # --- A. TWFE estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$twfe_coef,
                   table_vals$twfe_se_stars),
@@ -883,7 +883,7 @@ cat("  \\midrule\n")
 # --- B. Callaway and Sant'Anna estimates ---
 cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
 
-cat("  Connected railway & ",
+cat("  Connected railroad & ",
     paste(sprintf("%s$^{%s}$",
                   table_vals$cs_coef,
                   table_vals$cs_se_stars),
@@ -909,3 +909,149 @@ cat("\\end{tabular}\n")
 sink()
 
 
+
+##############################################################################
+# === Robustness: Excluding parishes connected by 1860 (early connected) === #
+##############################################################################
+# Referee 1 (comment 2b, second round) notes that imbalance is largely driven
+# by the very early connected parishes and suggests re-estimating the
+# treatment effects comparing only later-connected to never-connected
+# parishes. Here we drop all parishes connected by 1860 (the 1850 and 1860
+# cohorts, 25 parishes) and re-run the baseline specifications with controls.
+
+census_late <- census %>% filter(Treat_year == 0 | Treat_year > 1860)
+
+# TWFE with controls (SEs clustered at parish level)
+twfe_models <- lapply(dep_vars, \(y) feols(
+  as.formula(paste0(y, " ~ Connected_railway +
+                    Dist_hamb_year +
+                    Dist_cph_year +
+                    Pop1801_year +
+                    county_by_year +
+                    Dist_ox_year | GIS_ID + Year")),
+  data = census_late, cluster = ~ GIS_ID
+))
+
+# Callaway and Sant'Anna with controls (SEs clustered at parish level)
+cs_models <- lapply(dep_vars, \(y) att_gt(
+  yname   = y,
+  tname   = "Year_num",
+  idname  = "GIS_ID_num",
+  gname   = "Treat_year",
+  xformla = ~ dist_hmb + dist_cph + Pop1801 + county_by_year + DistOxRoad,
+  data    = census_late,
+  clustervars   = "GIS_ID",
+  control_group = "nevertreated"
+))
+
+# Aggregate into overall ATTs
+cs_aggs <- lapply(cs_models, \(m) aggte(m, type = "simple"))
+
+# Name the lists for easy reference
+names(cs_models) <- dep_vars
+names(cs_aggs)   <- dep_vars
+
+# Print all summaries one by one
+for (nm in names(cs_aggs)) {
+  cat("\n=== ", nm, " (excl. connected by 1860) ===\n")
+  print(summary(cs_aggs[[nm]]))
+}
+
+# Extract results from Callaway and St Anna
+cs_results <- extract_res(cs_aggs, grouped = FALSE)
+
+# Prepare TWFE results
+twfe_tidy   <- lapply(twfe_models, tidy)
+twfe_glance <- lapply(twfe_models, glance)
+
+# store mean of outcome TWFE
+my_twfe <- sapply(twfe_models, function(m) unname(fitstat(m, "my")))
+
+# create output table
+table_vals <- data.frame(
+  outcome   = c("log(Pop.)","Child-women ratio","Manufacturing",
+                "Not Agriculture","HISCAM avg","log(Migration)"),
+  twfe_coef = sprintf("%.4f", sapply(twfe_tidy, \(x) x$estimate[1])),
+  twfe_se   = sprintf("%.4f", sapply(twfe_tidy, \(x) x$std.error[1])),
+  twfe_se_stars = sapply(twfe_tidy, \(x) {
+    p <- x$p.value[1]
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  cs_coef   = sprintf("%.4f", cs_results$Estimate),
+  cs_se     = sprintf("%.4f", cs_results$SE),
+  cs_se_stars = sapply(cs_results$p, \(p) {
+    if (p < 0.01) return("***")
+    if (p < 0.05) return("**")
+    if (p < 0.1) return("*")
+    return("")
+  }),
+  obs_twfe  = sapply(twfe_glance, \(x) x$nobs),
+  my_twfe   = sprintf("%.4f", my_twfe),
+  my_cs     = sprintf("%.4f", cs_results$mean_outcome),
+  obs_cs    = cs_results$n
+)
+
+# create and store latex table
+sink("Tables/railways_and_development_controls_excluding_early_connected.tex")
+
+cat("\\begin{tabular}{lcccccc}\n")
+cat("  \\toprule\n")
+cat("  Outcome: & log(Pop.) & Child-women ratio & Manufacturing & Not Agriculture & HISCAM avg & log(Migration) \\\\\n")
+cat("           & (1) & (2) & (3) & (4) & (5) & (6) \\\\\n")
+cat("  \\midrule\n")
+
+# --- A. TWFE estimates ---
+cat("  \\multicolumn{7}{l}{\\textbf{A. TWFE estimates}}\\\\\n")
+
+cat("  Connected railroad & ",
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$twfe_coef,
+                  table_vals$twfe_se_stars),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("                    & ",
+    paste(sprintf("(%s)", table_vals$twfe_se),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_twfe, collapse = " & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_twfe, collapse = " & "),
+    " \\\\\n")
+
+cat("  \\midrule\n")
+
+# --- B. Callaway and Sant'Anna estimates ---
+cat("  \\multicolumn{7}{l}{\\textbf{B. Callaway and Sant'Anna estimates}}\\\\\n")
+
+cat("  Connected railroad & ",
+    paste(sprintf("%s$^{%s}$",
+                  table_vals$cs_coef,
+                  table_vals$cs_se_stars),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("                    & ",
+    paste(sprintf("(%s)", table_vals$cs_se),
+          collapse = " & "),
+    " \\\\\n")
+
+cat("  \\cmidrule(lr){2-7}\n")
+cat("  Observations      & ",
+    paste(table_vals$obs_cs, collapse = " & "),
+    " \\\\\n")
+cat("  Mean of outcome   & ",
+    paste(table_vals$my_cs, collapse = " & "),
+    " \\\\\n")
+
+cat("  \\bottomrule\n")
+cat("\\end{tabular}\n")
+
+sink()
