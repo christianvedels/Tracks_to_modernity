@@ -21,21 +21,35 @@ source("Data_cleaning_scripts/000_Functions.R")
 
 # ==== Read DK shape file ====
 
-# Download shapefile from DAWA
-url = "https://api.dataforsyningen.dk/kommuner?format=geojson"
-geofile = tempfile()
-download.file(url, geofile)
-shape = st_read(geofile)
+# Outline of Denmark from the project's parish shapefile. (This used to download
+# municipalities from DAWA, which has been shut down: the API now returns 410 Gone.)
+shape = read_sf("Data/sogne_shape/sogne.shp")
+st_crs(shape) = 4326
 
+# Exclude South Jutland (Schleswig), which was not part of Denmark 1864-1920
 shape = shape %>% 
-  filter(!navn %in% c("Tønder", "Haderslev", "Aabenraa", "Sønderborg"))
+  filter(!AMT %in% c("Toender", "Haderslev", "Aabenraa", "Soenderborg"))
 
+# Dissolve parishes in a projected CRS; the +-50 m buffer closes slivers between
+# neighbouring parish polygons
 dk <- shape %>%
-  st_make_valid() %>%   
-  st_union()
+  st_transform(25832) %>%
+  st_make_valid() %>%
+  st_buffer(50) %>%
+  st_union() %>%
+  st_buffer(-50)
+
+# Fill interior holes (lakes and leftover gaps), as in the municipal outline used before
+dk <- st_cast(dk, "POLYGON") %>%
+  lapply(function(p) st_polygon(p[1])) %>%
+  st_sfc(crs = 25832) %>%
+  st_union() %>%
+  st_transform(4326)
+
+sf_use_s2(FALSE) # crop with a planar lon/lat bounding box below
 
 # Read railroad shapefile
-rail <- st_read("../../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
+rail <- st_read("../Data not redistributable/Railways Fertner/jernbane_historisk_v050413/jernbane_historisk.shp") %>%
   st_transform(crs = 4326) %>%  # Ensure transformation to WGS 84
   mutate(id = c(1:n()))
 
@@ -89,6 +103,7 @@ labels_sf <- labels_sf %>%
     label = if_else(Market_town == "Copenhagen", "Copenhagen", label) # keep English exonym
   )
 # ==== Dynamic Plot Creation ====
+# Figure 2 (A-D) in the paper: 1850, 1860, 1880, 1901
 
 years <- c(1850, 1860, 1880, 1901)
 
@@ -121,7 +136,7 @@ for (year in years) {
     theme_void() +
     theme(panel.background = element_rect(fill = "white", color = NA))
   print(p)
-  ggsave(paste0("Plots/Maps_of_railways/Rails", year, ".png"), p, width = 10, height = 8)
+  save_fig(paste0("Plots/Maps_of_railways/Rails", year, ".png"), p, width = 10, height = 8)
 } 
 
 
