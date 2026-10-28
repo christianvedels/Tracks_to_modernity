@@ -190,6 +190,9 @@ sink()
 ####################################################
 
 # Run all decompositions for each outcome
+# NOTE: Group/calendar aggregations are not plotted (not used in the paper) but are
+# kept: aggte() bootstraps, so removing them would shift the RNG stream and change
+# the bootstrapped SEs reported in later tables.
 cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group"),
@@ -203,6 +206,7 @@ names(cs_decomp) <- dep_vars
 
 #################################
 # === Dynamic plots -20 +20 === #
+# === Figure 6 (A-F) in the paper  === #
 #################################
 
 # create plots
@@ -210,11 +214,12 @@ plots <- lapply(names(cs_decomp), function(v) {
   base_plot <- ggdid(cs_decomp[[v]]$dynamic)
   dat <- layer_data(base_plot)  # extract coefficients + CI
   
-  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+  ggplot(dat, aes(x = x, y = y, color = factor(group), shape = factor(group))) +
     geom_point(size = 8) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
     geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    scale_shape_manual(values = c("1" = 16, "2" = 17)) +  # pre/post distinguishable in greyscale
     scale_x_continuous(
       limits = c(-25, 25),
       breaks = seq(-20, 20, by = 20)
@@ -222,7 +227,7 @@ plots <- lapply(names(cs_decomp), function(v) {
     theme_minimal(base_size = 30) +
     labs(
       x = "Years since treatment",
-      y = NULL,
+      y = "Estimated effect (ATT)",
       title = NULL,
       color = NULL
     ) +
@@ -236,17 +241,15 @@ plots[[1]]
 for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
-  ggsave(
-    filename = file.path("Plots/decomposition_census_dynamic_controls", filename),
-    plot = plots[[i]],
-    width = dims$width, height = dims$height, dpi = 300
-  )
+  save_fig(file.path("Plots/decomposition_census_dynamic_controls", filename), plots[[i]])
 }
 
 ##################################
 # === Dynamic plots -40 + 20 === #
 ##################################
 
+# Not used in the paper: plots commented out. The aggregation itself is kept
+# so the RNG stream (and later bootstrapped SEs) is unchanged.
 # Dynamic aggregation only, for each outcome
 cs_dynamic <- lapply(cs_models, function(m) {
   aggte(m, type = "dynamic", min_e = -40, max_e = 20)
@@ -254,82 +257,83 @@ cs_dynamic <- lapply(cs_models, function(m) {
 names(cs_dynamic) <- dep_vars
 
 # create plots
-plots <- lapply(names(cs_dynamic), function(v) {
-  base_plot <- ggdid(cs_dynamic[[v]])
-  dat <- layer_data(base_plot)  # extract coefficients + CI
+# plots <- lapply(names(cs_dynamic), function(v) {
+#   base_plot <- ggdid(cs_dynamic[[v]])
+#   dat <- layer_data(base_plot)  # extract coefficients + CI
   
-  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
-    geom_point(size = 8) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
-    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
-    scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
-    scale_x_continuous(
-      limits = c(-45, 25),
-      breaks = seq(-40, 20, by = 20)
-    ) +
-    theme_minimal(base_size = 30) +
-    labs(
-      x = "Years since treatment",
-      y = NULL,
-      title = NULL,
-      color = NULL
-    ) +
-    theme(legend.position = "none")
-})
+#   ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+#     geom_point(size = 8) +
+#     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
+#     geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 4, linewidth = 2) +
+#     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+#     scale_x_continuous(
+#       limits = c(-45, 25),
+#       breaks = seq(-40, 20, by = 20)
+#     ) +
+#     theme_minimal(base_size = 30) +
+#     labs(
+#       x = "Years since treatment",
+#       y = NULL,
+#       title = NULL,
+#       color = NULL
+#     ) +
+#     theme(legend.position = "none")
+# })
 
 # View the first one
-plots[[1]]
+# plots[[1]]
 
 # Save plots with names p1_varname, p2_varname, ...
-for (i in seq_along(plots)) {
-  varname <- dep_vars[i]
-  filename <- paste0("p", i, "_", varname, "40_20", ".png")
-  ggsave(
-    filename = file.path("Plots/decomposition_census_dynamic_controls/window_minus_40_to_plus_20", filename),
-    plot = plots[[i]],
-    width = dims$width, height = dims$height, dpi = 300
-  )
-}
+# for (i in seq_along(plots)) {
+#   varname <- dep_vars[i]
+#   filename <- paste0("p", i, "_", varname, "40_20", ".png")
+#   ggsave(
+#     filename = file.path("Plots/decomposition_census_dynamic_controls/window_minus_40_to_plus_20", filename),
+#     plot = plots[[i]],
+#     width = dims$width, height = dims$height, dpi = 300
+#   )
+# }
 
+# ---- Calendar and group plots: not used in the paper, commented out ----
 ##########################
 # === Calendar plots === #
 ##########################
 
 # create plots
-plots <- lapply(names(cs_decomp), function(v) {
-  base_plot <- ggdid(cs_decomp[[v]]$calendar)
-  dat <- layer_data(base_plot)  # extract coefficients + CI
+# plots <- lapply(names(cs_decomp), function(v) {
+#   base_plot <- ggdid(cs_decomp[[v]]$calendar)
+#   dat <- layer_data(base_plot)  # extract coefficients + CI
   
-  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
-    geom_point(size = 8) +
-    geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
-    geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 3, size = 2) +
-    scale_color_manual(values = c("1" = colours$red, "2" = colours$black)) +
-    theme_minimal(base_size = 30) +
-    labs(
-      x = "Year",
-      y = NULL,
-      title = NULL,
-      color = NULL,
-      fill  = "Confidence Interval"
-    ) +
-    theme(legend.position = "none")
-})
+#   ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+#     geom_point(size = 8) +
+#     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", size = 2) +  # dashed line at 0
+#     geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 3, size = 2) +
+#     scale_color_manual(values = c("1" = colours$red, "2" = colours$black)) +
+#     theme_minimal(base_size = 30) +
+#     labs(
+#       x = "Year",
+#       y = NULL,
+#       title = NULL,
+#       color = NULL,
+#       fill  = "Confidence Interval"
+#     ) +
+#     theme(legend.position = "none")
+# })
 
 # View the first one
-plots[[1]]
+# plots[[1]]
 
 
 # Save plots with names p1_varname, p2_varname, ...
-for (i in seq_along(plots)) {
-  varname <- dep_vars[i]
-  filename <- paste0("p", i, "_", varname, ".png")
-  ggsave(
-    filename = file.path("Plots/decomposition_census_calendar_controls", filename),
-    plot = plots[[i]],
-    width = dims$width, height = dims$height, dpi = 300
-  )
-}
+# for (i in seq_along(plots)) {
+#   varname <- dep_vars[i]
+#   filename <- paste0("p", i, "_", varname, ".png")
+#   ggsave(
+#     filename = file.path("Plots/decomposition_census_calendar_controls", filename),
+#     plot = plots[[i]],
+#     width = dims$width, height = dims$height, dpi = 300
+#   )
+# }
 
 #######################
 # === Group plots === #
@@ -337,44 +341,44 @@ for (i in seq_along(plots)) {
 
 
 # === Group plots === #
-plots <- lapply(names(cs_decomp), function(v) {
-  gobj <- cs_decomp[[v]]$group
-  dat <- data.frame(
-    group = gobj$egt,
-    att   = gobj$att.egt,
-    se    = gobj$se.egt
-  )
+# plots <- lapply(names(cs_decomp), function(v) {
+#   gobj <- cs_decomp[[v]]$group
+#   dat <- data.frame(
+#     group = gobj$egt,
+#     att   = gobj$att.egt,
+#     se    = gobj$se.egt
+#   )
   
-  ggplot(dat, aes(x = att, y = factor(group), color = factor(group))) +
-    geom_point(size = 8, color = colours$red) +
-    geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se),
-                   height = 0.4, size = 2, color = colours$red) +
-    geom_vline(xintercept = 0, linetype = "dashed",  # ← swapped
-               color = "grey40", size = 2) +
-    theme_minimal(base_size = 30) +
-    labs(
-      x = "Effect",
-      y = "Group",
-      color = NULL
-    ) +
-    theme(legend.position = "none")
-})
+#   ggplot(dat, aes(x = att, y = factor(group), color = factor(group))) +
+#     geom_point(size = 8, color = colours$red) +
+#     geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se),
+#                    height = 0.4, size = 2, color = colours$red) +
+#     geom_vline(xintercept = 0, linetype = "dashed",  # ← swapped
+#                color = "grey40", size = 2) +
+#     theme_minimal(base_size = 30) +
+#     labs(
+#       x = "Effect",
+#       y = "Group",
+#       color = NULL
+#     ) +
+#     theme(legend.position = "none")
+# })
 
 
 # View the first one
-plots[[1]]
+# plots[[1]]
 
 
 # Save plots with names p1_varname, p2_varname, ...
-for (i in seq_along(plots)) {
-  varname <- dep_vars[i]
-  filename <- paste0("p", i, "_", varname, ".png")
-  ggsave(
-    filename = file.path("Plots/decomposition_census_group_controls", filename),
-    plot = plots[[i]],
-    width = dims$width, height = dims$height, dpi = 300
-  )
-}
+# for (i in seq_along(plots)) {
+#   varname <- dep_vars[i]
+#   filename <- paste0("p", i, "_", varname, ".png")
+#   ggsave(
+#     filename = file.path("Plots/decomposition_census_group_controls", filename),
+#     plot = plots[[i]],
+#     width = dims$width, height = dims$height, dpi = 300
+#   )
+# }
 
 ##########################################################################
 # === TWFE Regressions with controls (SEs clustered at county level) === #
