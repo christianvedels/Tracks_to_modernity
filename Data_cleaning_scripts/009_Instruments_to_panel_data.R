@@ -46,7 +46,7 @@ foreach(i = 1:length(shapes)) %do% {
     shape_i,
     shape_parishes,
     verbose = TRUE,
-    plots = TRUE,
+    plots = FALSE, # diagnostic maps not used in the paper
     id = paste0("predicted_rail_paramS",i),
     years = 1846:1901
   )

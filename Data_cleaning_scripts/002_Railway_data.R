@@ -22,7 +22,7 @@ test = calc_rail( # Comes from functions
   shape,
   shape_parishes[1:10,],
   verbose = TRUE,
-  plots = TRUE,
+  plots = FALSE, # diagnostic maps not used in the paper
   id = "test",
   years = 1870:1871
 )
@@ -32,7 +32,7 @@ railways_panel = calc_rail(
   shape,
   shape_parishes,
   verbose = TRUE,
-  plots = TRUE,
+  plots = FALSE, # diagnostic maps not used in the paper
   id = "actual_railways",
   years = 1846:2020
 )
@@ -85,7 +85,7 @@ foreach(shape_sub = subset1) %do% {
     shape_sub,
     shape_parishes,
     verbose = TRUE,
-    plots = TRUE,
+    plots = FALSE, # diagnostic maps not used in the paper
     id = paste0("By_type_type_", type1),
     years = 1846:2020
   )
@@ -108,7 +108,7 @@ foreach(shape_sub = subset2) %do% {
     shape_sub,
     shape_parishes,
     verbose = TRUE,
-    plots = TRUE,
+    plots = FALSE, # diagnostic maps not used in the paper
     id = paste0("By_type_type2_", type2),
     years = 1846:2020
   )

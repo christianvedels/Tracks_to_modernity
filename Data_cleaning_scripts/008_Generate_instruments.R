@@ -81,10 +81,10 @@ write_xlsx(nodes_sub, "../Data/nodes.xlsx")
 # Obtain elevation raster (from OpenStreetMap)
 denmark_elev = get_elev_raster(outline_dk, z = 7, source = "osm", clip = "locations") # z(oom) = 9 used by package "movecost", probably need zoom = 10 or higher but my computer breaks down at this resolution
 
-# ==== Plot elev ====
-plot(denmark_elev)
+# ==== Plot elev (not used in the paper, commented out) ====
+# plot(denmark_elev)
 dnk = as(denmark_elev, "SpatRaster")
-plot(dnk, main="Original Raster")
+# plot(dnk, main="Original Raster")
 
 #############################################################################################
 # === Create slope cost surface using pre-installed wheeled transport function (Herzog) === #
@@ -105,7 +105,7 @@ for (crit_slope in crit_slope_values) {
   )
   
   # Plot the resulting slope cost surface
-  plot(slope_cs)
+  # plot(slope_cs) # not used in the paper
   
   # Construct the file name dynamically based on the crit_slope value
   slope_label = crit_slope
@@ -144,8 +144,8 @@ nodes_sf <- st_as_sf(nodes,
                      crs = 4326)
 
 
-plot(dnk, main="Original Raster")
-plot(nodes_sf$geometry, add = T, col = "yellow")
+# plot(dnk, main="Original Raster") # not used in the paper
+# plot(nodes_sf$geometry, add = T, col = "yellow")
 
 # === Creation of file that contains all unique GIS_IDs and their respective minimum distance to nodes
 
@@ -348,47 +348,47 @@ for (slope_label in names(cost_surfaces)) {
 # === SANITY Check === #
 ########################
 
-# === Plot year-by-year maps of actual railways + LCPs ===
+# === Plot year-by-year maps of actual railways + LCPs (not used in the paper, commented out) ===
 
 # Pick the LCPs for your crit_slope (here: 12)
-lcp_sf <- lcp_sf_all_cost_surfaces[["2"]]
+# lcp_sf <- lcp_sf_all_cost_surfaces[["2"]]
 
 # Path to PDF on Desktop
-out_pdf <- "../../../Data not redistributable/instrument_shapes/railways_year_by_year.pdf"
+# out_pdf <- "../../../Data not redistributable/instrument_shapes/railways_year_by_year.pdf"
 
-pdf(out_pdf, width = 9, height = 9)
+# pdf(out_pdf, width = 9, height = 9)
 
-for (yr in sort(unique(town_pairs$opened))) {
-  plot(st_geometry(outline_dk), 
-       main = paste("Railways and LCPs up to", yr), 
-       col = "grey90")
+# for (yr in sort(unique(town_pairs$opened))) {
+#   plot(st_geometry(outline_dk), 
+#        main = paste("Railways and LCPs up to", yr), 
+#        col = "grey90")
   
   # --- actual historical railways ---
-  if ("opened" %in% names(shape_data)) {
-    plot(st_geometry(shape_data[shape_data$opened <= yr, ]), 
-         col = "black", lwd = 3, add = TRUE)   # thicker black lines
-  } else if ("YEAR_OPEN" %in% names(shape_data)) {
-    plot(st_geometry(shape_data[shape_data$YEAR_OPEN <= yr, ]), 
-         col = "black", lwd = 3, add = TRUE)
-  }
+#   if ("opened" %in% names(shape_data)) {
+#     plot(st_geometry(shape_data[shape_data$opened <= yr, ]), 
+#          col = "black", lwd = 3, add = TRUE)   # thicker black lines
+#   } else if ("YEAR_OPEN" %in% names(shape_data)) {
+#     plot(st_geometry(shape_data[shape_data$YEAR_OPEN <= yr, ]), 
+#          col = "black", lwd = 3, add = TRUE)
+#   }
   
   # --- predicted LCPs ---
-  plot(st_geometry(lcp_sf[lcp_sf$opened <= yr, ]), 
-       col = "red", lwd = 3, add = TRUE)       # thicker red lines
+#   plot(st_geometry(lcp_sf[lcp_sf$opened <= yr, ]), 
+#        col = "red", lwd = 3, add = TRUE)       # thicker red lines
   
   # --- towns (nodes) ---
-  plot(st_geometry(nodes_sf),
-       pch = 21,              # circle with border + fill
-       bg = "yellow",         # fill color
-       col = "black",         # border color
-       cex = 1.2,             # size
-       lwd = 2,
-       add = TRUE)
-}
+#   plot(st_geometry(nodes_sf),
+#        pch = 21,              # circle with border + fill
+#        bg = "yellow",         # fill color
+#        col = "black",         # border color
+#        cex = 1.2,             # size
+#        lwd = 2,
+#        add = TRUE)
+# }
 
-dev.off()
+# dev.off()
 
-message("Saved PDF to: ", out_pdf)
+# message("Saved PDF to: ", out_pdf)
 
 
 

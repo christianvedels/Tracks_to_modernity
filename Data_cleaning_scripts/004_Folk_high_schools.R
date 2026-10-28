@@ -38,19 +38,20 @@ geo_tmp$GIS_ID = gis_id
 
 geo_key = geo_tmp %>% select(id, GIS_ID)
 
-p1 = ggplot() + 
-  layer_spatial(
-    size = 0,
-    data = shape_parishes
-  ) + 
-  layer_spatial(
-    geo_tmp_sf
-  ) + 
-  theme_bw()
+# Map of folk high schools: not used in the paper, commented out
+# p1 = ggplot() + 
+#   layer_spatial(
+#     size = 0,
+#     data = shape_parishes
+#   ) + 
+#   layer_spatial(
+#     geo_tmp_sf
+#   ) + 
+#   theme_bw()
 
-p1
-w = 6
-ggsave("Plots/Hoejskoler.png", plot = p1, width = w, height = 0.7*w)
+# p1
+# w = 6
+# ggsave("Plots/Hoejskoler.png", plot = p1, width = w, height = 0.7*w)
 
 # ==== Construct panel ====
 min_year = hoejskoler$Start %>% min()
@@ -87,41 +88,41 @@ highschool_panel = foreach(y = seq(min_year, max_year), .combine = "bind_rows") 
   return(res_y)
 }
 
-# Summary stats
-highschool_panel %>% 
-  group_by(Year) %>% 
-  summarise(HighSchools = sum(HighSchool)) %>% 
-  ggplot(aes(Year, HighSchools)) + geom_line()
+# Summary stats (plot not used in the paper, commented out)
+# highschool_panel %>% 
+#   group_by(Year) %>% 
+#   summarise(HighSchools = sum(HighSchool)) %>% 
+#   ggplot(aes(Year, HighSchools)) + geom_line()
 
-# ==== Plot ====
-foreach(y = seq(min(highschool_panel$Year), max(highschool_panel$Year))) %do% {
-  tmp_y = highschool_panel %>% 
-    filter(Year == y) %>% 
-    mutate(GIS_ID = as.character(GIS_ID))
+# ==== Plot ==== (not used in the paper, commented out)
+# foreach(y = seq(min(highschool_panel$Year), max(highschool_panel$Year))) %do% {
+#   tmp_y = highschool_panel %>% 
+#     filter(Year == y) %>% 
+#     mutate(GIS_ID = as.character(GIS_ID))
   
-  shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
+#   shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
   
-  p1 = ggplot() +
-    layer_spatial(
-      aes(fill = HighSchool),
-      size = 0,
-      data = shape_y
-    ) + 
-    scale_fill_gradient(
-      low = "white",
-      high = "#DE7500"
-    ) + 
-    theme_bw()
+#   p1 = ggplot() +
+#     layer_spatial(
+#       aes(fill = HighSchool),
+#       size = 0,
+#       data = shape_y
+#     ) + 
+#     scale_fill_gradient(
+#       low = "white",
+#       high = "#DE7500"
+#     ) + 
+#     theme_bw()
   
   # p1 = p1 +
   #   expand_limits(fill = c(0, max(panel_assembly_houses$Assembly_house)))
   
-  fname_y = paste0("Plots/Folk_high_schools/","Y",y,".png")
-  w = 6
-  ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
+#   fname_y = paste0("Plots/Folk_high_schools/","Y",y,".png")
+#   w = 6
+#   ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
   
-  cat(y, "           \r")
-}
+#   cat(y, "           \r")
+# }
 
 # ==== Compute market access ====
 MA_highschools = MA(
@@ -132,35 +133,35 @@ MA_highschools = MA(
   verbose = TRUE
 )
 
-# ==== Plot MA ====
-foreach(y = seq(min(MA_highschools$Year), max(MA_highschools$Year))) %do% {
-  tmp_y = MA_highschools %>% 
-    filter(Year == y) %>% 
-    mutate(GIS_ID = as.character(GIS_ID))
+# ==== Plot MA ==== (not used in the paper, commented out)
+# foreach(y = seq(min(MA_highschools$Year), max(MA_highschools$Year))) %do% {
+#   tmp_y = MA_highschools %>% 
+#     filter(Year == y) %>% 
+#     mutate(GIS_ID = as.character(GIS_ID))
   
-  shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
+#   shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
   
-  p1 = ggplot() +
-    layer_spatial(
-      aes(fill = MA),
-      size = 0,
-      data = shape_y
-    ) + 
-    scale_fill_gradient(
-      low = "white",
-      high = "#DE7500"
-    ) + 
-    theme_bw()
+#   p1 = ggplot() +
+#     layer_spatial(
+#       aes(fill = MA),
+#       size = 0,
+#       data = shape_y
+#     ) + 
+#     scale_fill_gradient(
+#       low = "white",
+#       high = "#DE7500"
+#     ) + 
+#     theme_bw()
   
   # p1 = p1 +
   #   expand_limits(fill = c(0, max(panel_assembly_houses$Assembly_house)))
   
-  fname_y = paste0("Plots/Folk_high_schools_MA/","Y",y,".png")
-  w = 6
-  ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
+#   fname_y = paste0("Plots/Folk_high_schools_MA/","Y",y,".png")
+#   w = 6
+#   ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
   
-  cat("\n",y)
-}
+#   cat("\n",y)
+# }
 
 # ==== Save data ====
 highschool_panel %>% 

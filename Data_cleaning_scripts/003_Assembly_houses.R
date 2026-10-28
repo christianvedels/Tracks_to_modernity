@@ -48,19 +48,19 @@ key0 = key0 %>%
   group_by(GIS_ID) %>% 
   summarise(cluster = cluster[1])
 
-# Plot missing links
+# Plot missing links (not used in the paper, commented out)
 tmp = shape_parishes %>% 
   left_join(key0 %>% mutate(GIS_ID = as.character(GIS_ID)), by = "GIS_ID") %>% 
   mutate(
     missing = is.na(cluster)
   )
 
-ggplot() + # Not important
-  layer_spatial(
-    aes(fill = missing, col = missing),
-    size = 0,
-    data = tmp
-  )
+# ggplot() + # Not important
+#   layer_spatial(
+#     aes(fill = missing, col = missing),
+#     size = 0,
+#     data = tmp
+#   )
   
 tmp$missing %>% sum() # 32 is not linked
 
@@ -74,33 +74,33 @@ panel_assembly_houses = assembly_houses %>%
   inner_join(key0, by = "cluster") %>% 
   filter(Year <= 1920) # First year of publicaitons of Trap 4
 
-# ==== Plot ====
-foreach(y = seq(min(panel_assembly_houses$Year), max(panel_assembly_houses$Year))) %do% {
-  tmp_y = panel_assembly_houses %>% 
-    filter(Year == y) %>% 
-    mutate(GIS_ID = as.character(GIS_ID))
+# ==== Plot ==== (not used in the paper, commented out)
+# foreach(y = seq(min(panel_assembly_houses$Year), max(panel_assembly_houses$Year))) %do% {
+#   tmp_y = panel_assembly_houses %>% 
+#     filter(Year == y) %>% 
+#     mutate(GIS_ID = as.character(GIS_ID))
   
-  shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
+#   shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
   
-  p1 = ggplot() +
-    layer_spatial(
-      aes(fill = Assembly_house),
-      size = 0,
-      data = shape_y
-    ) + 
-    scale_fill_gradient(
-      low = "white",
-      high = "#DE7500"
-    ) + 
-    theme_bw()
+#   p1 = ggplot() +
+#     layer_spatial(
+#       aes(fill = Assembly_house),
+#       size = 0,
+#       data = shape_y
+#     ) + 
+#     scale_fill_gradient(
+#       low = "white",
+#       high = "#DE7500"
+#     ) + 
+#     theme_bw()
   
   # p1 = p1 +
   #   expand_limits(fill = c(0, max(panel_assembly_houses$Assembly_house)))
     
-  fname_y = paste0("Plots/Assembly_houses/","Y",y,".png")
-  w = 6
-  ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
-}
+#   fname_y = paste0("Plots/Assembly_houses/","Y",y,".png")
+#   w = 6
+#   ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
+# }
 
 # ==== Compute market access ====
 MA_assembly = MA(
@@ -112,35 +112,35 @@ MA_assembly = MA(
   verbose = TRUE
 )
 
-# ==== Plot MA ====
-foreach(y = seq(min(panel_assembly_houses$Year), max(panel_assembly_houses$Year))) %do% {
-  tmp_y = MA_assembly %>% 
-    filter(Year == y) %>% 
-    mutate(GIS_ID = as.character(GIS_ID))
+# ==== Plot MA ==== (not used in the paper, commented out)
+# foreach(y = seq(min(panel_assembly_houses$Year), max(panel_assembly_houses$Year))) %do% {
+#   tmp_y = MA_assembly %>% 
+#     filter(Year == y) %>% 
+#     mutate(GIS_ID = as.character(GIS_ID))
   
-  shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
+#   shape_y = shape_parishes %>% left_join(tmp_y, by = "GIS_ID")
   
-  p1 = ggplot() +
-    layer_spatial(
-      aes(fill = MA),
-      size = 0,
-      data = shape_y
-    ) + 
-    scale_fill_gradient(
-      low = "white",
-      high = "#DE7500"
-    ) + 
-    theme_bw()
+#   p1 = ggplot() +
+#     layer_spatial(
+#       aes(fill = MA),
+#       size = 0,
+#       data = shape_y
+#     ) + 
+#     scale_fill_gradient(
+#       low = "white",
+#       high = "#DE7500"
+#     ) + 
+#     theme_bw()
   
   # p1 = p1 +
   #   expand_limits(fill = c(0, max(panel_assembly_houses$Assembly_house)))
   
-  fname_y = paste0("Plots/Assembly_houses_MA/","Y",y,".png")
-  w = 6
-  ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
+#   fname_y = paste0("Plots/Assembly_houses_MA/","Y",y,".png")
+#   w = 6
+#   ggsave(fname_y, plot = p1, width = w, height = 0.7*w)
   
-  cat("\n",y)
-}
+#   cat("\n",y)
+# }
 
 # ==== Save data ====
 panel_assembly_houses %>% 
