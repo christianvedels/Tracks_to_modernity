@@ -10,3 +10,6 @@ archival_picture_sentiments/Example images/
 .RData
 .RData
 /tmp
+
+# Local audit notes for the EREH final submission
+/audit/

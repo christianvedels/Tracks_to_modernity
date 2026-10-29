@@ -64,6 +64,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -264,6 +265,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -632,6 +634,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ###############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -781,6 +784,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ))
 
 # Callaway and Sant'Anna with controls (SEs clustered at parish level)
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,
   tname   = "Year_num",
