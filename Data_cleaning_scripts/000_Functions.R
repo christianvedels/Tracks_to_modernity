@@ -18,6 +18,17 @@ dims = list(
   height = 6
 )
 
+# ==== save_fig(filename, plot, width, height) ====
+# Saves a ggplot as 1200 dpi PNG (line art, journal requirement) and as a
+# vector PDF with the same name and dimensions. White background, since themes
+# like theme_minimal() otherwise give a transparent one
+save_fig = function(filename, plot, width = dims$width, height = dims$height){
+  ggplot2::ggsave(filename, plot, width = width, height = height, dpi = 1200,
+                  device = ragg::agg_png, bg = "white")
+  ggplot2::ggsave(sub("\\.png$", ".pdf", filename), plot, width = width,
+                  height = height, device = grDevices::cairo_pdf, bg = "white")
+}
+
 # ==== pretty_pct(x, digits = 4) ====
 # Makes pretty pct string
 pretty_pct = function(x, digits = 4){

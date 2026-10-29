@@ -64,6 +64,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -194,6 +195,9 @@ sink()
 ########################################
 
 # Run all decompositions for each outcome
+# NOTE: Group/calendar aggregations are not plotted (not used in the paper) but are
+# kept: aggte() bootstraps, so removing them would shift the RNG stream and change
+# the bootstrapped SEs reported in later tables.
 cs_decomp <- lapply(cs_models, function(m) {
   list(
     group    = aggte(m, type = "group", na.rm =T),
@@ -207,6 +211,7 @@ names(cs_decomp) <- dep_vars
 
 #########################
 # === Dynamic plots === #
+# === Figure 7 (A-D) in the paper === #
 #########################
 
 # create plots
@@ -214,16 +219,17 @@ plots <- lapply(names(cs_decomp), function(v) {
   base_plot <- ggdid(cs_decomp[[v]]$dynamic)
   dat <- layer_data(base_plot)  # extract coefficients + CI
   
-  ggplot(dat, aes(x = x, y = y, color = factor(group))) +
+  ggplot(dat, aes(x = x, y = y, color = factor(group), shape = factor(group))) +
     geom_point(size = 4) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 2) +  # dashed line at 0
     geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 2, linewidth = 1) +
     scale_color_manual(values = c("1" = colours$black, "2" = colours$red)) +
+    scale_shape_manual(values = c("1" = 16, "2" = 17)) +  # pre/post distinguishable in greyscale
     scale_x_continuous(breaks = c(-40, -20, 0, 20, 40)) +
     theme_minimal(base_size = 30) +
     labs(
       x = "Years since treatment",
-      y = NULL,
+      y = "Estimated effect (ATT)",
       title = NULL,
       color = NULL
     ) +
@@ -237,11 +243,7 @@ plots[[3]]
 for (i in seq_along(plots)) {
   varname <- dep_vars[i]
   filename <- paste0("p", i, "_", varname, ".png")
-  ggsave(
-    filename = file.path("Plots/decomposition_grundtvig_dynamic_controls", filename),
-    plot = plots[[i]],
-    width = dims$width, height = dims$height, dpi = 300
-  )
+  save_fig(file.path("Plots/decomposition_grundtvig_dynamic_controls", filename), plots[[i]])
 }
 
 
@@ -263,6 +265,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -631,6 +634,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ###############################################################################################
 
 # Estimate all models
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,    
   tname   = "Year_num",        
@@ -780,6 +784,7 @@ twfe_models <- lapply(dep_vars, \(y) feols(
 ))
 
 # Callaway and Sant'Anna with controls (SEs clustered at parish level)
+set.seed(20) # reseed per block: bootstrap SEs then don't depend on code run before
 cs_models <- lapply(dep_vars, \(y) att_gt(
   yname   = y,
   tname   = "Year_num",

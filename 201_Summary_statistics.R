@@ -146,6 +146,7 @@ summary_tables = function() {
 summary_tables()
 
 # ==== Densities ====
+# Figure 4 in the paper
 census_distributions = function(){
   tmp = census %>%
     group_by(GIS_ID) %>%
@@ -165,18 +166,22 @@ census_distributions = function(){
       names_to = "var"
     ) %>%
     mutate(var = outcomeNames(var)) %>%
-    ggplot(aes(x = value, fill = Ever_rail)) +
+    ggplot(aes(x = value, fill = Ever_rail, col = Ever_rail, linetype = Ever_rail)) +
     geom_density(alpha = 0.5) + 
     facet_wrap(~var, scales = "free", ncol = 3) +
     theme_bw() +
-    labs(fill = "Eventually connected to railroad?", x = "", y = "") +
+    labs(fill = "Eventually connected to railroad?", col = "Eventually connected to railroad?",
+         linetype = "Eventually connected to railroad?", x = "Value", y = "Density") +
     scale_fill_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
+    scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
+    scale_linetype_manual(values = c("No" = "solid", "Yes" = "dashed")) +
     theme(legend.position = "bottom")
   
   print(p1)
-  ggsave("Plots/Densities_census.png", p1, width = dims$width, height = dims$height)
+  save_fig("Plots/Densities_census.png", p1)
 }
 
+# Figure A1 in the appendix
 census_distributions_by_year = function(){
   tmp = census %>%
     group_by(GIS_ID) %>%
@@ -196,6 +201,8 @@ census_distributions_by_year = function(){
   # Assign black for "Never" and distinct colors for each year
   palette_years <- RColorBrewer::brewer.pal(min(length(years), 8), "Set1")
   colors <- c("Never" = "black", setNames(palette_years, years))
+  # Linetypes so the groups are distinguishable in black and white
+  linetypes <- c("Never" = "solid", setNames(c("dashed", "dotted", "dotdash", "longdash", "twodash")[seq_along(years)], years))
   
   p1 = tmp %>%
     select(Treat_year, lnPopulation, Child_women_ratio, industry_share,
@@ -208,16 +215,17 @@ census_distributions_by_year = function(){
       names_to = "var"
     ) %>%
     mutate(var = outcomeNames(var)) %>%
-    ggplot(aes(x = value, fill = Treat_year)) +
-    geom_density(alpha = 0.4) + 
+    ggplot(aes(x = value, fill = Treat_year, linetype = Treat_year)) +
+    geom_density(alpha = 0.4, linewidth = 0.6) + 
     facet_wrap(~var, scales = "free", ncol = 3) +
     theme_bw() +
-    labs(fill = "Connection year", x = "", y = "") +
+    labs(fill = "Connection year", linetype = "Connection year", x = "Value", y = "Density") +
     scale_fill_manual(values = colors) +
+    scale_linetype_manual(values = linetypes) +
     theme(legend.position = "bottom")
   
   print(p1)
-  ggsave("Plots/Densities_census_treat_year.png", p1, width = dims$width, height = dims$height)
+  save_fig("Plots/Densities_census_treat_year.png", p1)
 }
 
 # ==== Kolmogorov-Smirnov tests ====
@@ -380,7 +388,7 @@ ks_tests_ever_treated = function(){
   print(combined_tex)
 }
 
-# ==== Grundtvig over time ====
+# ==== Grundtvig over time (Figure 3 in the paper) ====
 grundtvig_distributions_over_time = function(){
   p1 = grundtvig %>%
     group_by(GIS_ID) %>%
@@ -392,20 +400,23 @@ grundtvig_distributions_over_time = function(){
                         "HighSchool" = "Share of parishes with a folk high school")) %>%
     group_by(var, Year, Ever_rail) %>%
     summarise(share = mean(value, na.rm = TRUE), .groups = "drop") %>%
-    ggplot(aes(x = Year, y = share, col = Ever_rail)) +
+    ggplot(aes(x = Year, y = share, col = Ever_rail, linetype = Ever_rail, shape = Ever_rail)) +
     geom_line() +
     geom_point() +
     facet_wrap(~var, scales = "free", ncol = 1) +
     theme_bw() +
-    labs(col = "Eventually connected to railroad?", y = "") +
+    labs(col = "Eventually connected to railroad?", linetype = "Eventually connected to railroad?",
+         shape = "Eventually connected to railroad?", y = "Share of parishes") +
     scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
+    scale_linetype_manual(values = c("No" = "solid", "Yes" = "dashed")) +
+    scale_shape_manual(values = c("No" = 16, "Yes" = 17)) +
     theme(legend.position = "bottom")
   
   print(p1)
-  ggsave("Plots/Grundtvig_over_time.png", p1, width = dims$width, height = 1.25*dims$height)
+  save_fig("Plots/Grundtvig_over_time.png", p1, height = 1.25*dims$height)
 }
 
-# ==== Figure: Census outcomes over time by railroad connection ====
+# ==== Figure 5: Census outcomes over time by railroad connection ====
 census_outcomes_over_time = function(){
   # Parishes already connected in 1850 (8 of 1589), excluded as in Figure 4
   already_connected_1850 = census %>%
@@ -433,18 +444,21 @@ census_outcomes_over_time = function(){
     )) %>%
     group_by(var, Year_num, Ever_rail) %>%
     summarise(mean_value = mean(value, na.rm = TRUE), .groups = "drop") %>%
-    ggplot(aes(x = Year_num, y = mean_value, col = Ever_rail)) +
+    ggplot(aes(x = Year_num, y = mean_value, col = Ever_rail, linetype = Ever_rail, shape = Ever_rail)) +
     geom_line() +
     geom_point() +
     facet_wrap(~var, scales = "free", ncol = 3) +
     scale_x_continuous(breaks = c(1850, 1860, 1880, 1901), minor_breaks = NULL) +
     theme_bw() +
-    labs(col = "Eventually connected to railroad?", x = "Year", y = "") +
+    labs(col = "Eventually connected to railroad?", linetype = "Eventually connected to railroad?",
+         shape = "Eventually connected to railroad?", x = "Year", y = "Parish mean") +
     scale_color_manual(values = c("No" = colours$black, "Yes" = colours$red)) +
+    scale_linetype_manual(values = c("No" = "solid", "Yes" = "dashed")) +
+    scale_shape_manual(values = c("No" = 16, "Yes" = 17)) +
     theme(legend.position = "bottom")
   
   print(p1)
-  ggsave("Plots/Census_outcomes_over_time.png", p1, width = dims$width, height = dims$height)
+  save_fig("Plots/Census_outcomes_over_time.png", p1)
 }
 
 
